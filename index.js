@@ -2,6 +2,8 @@ const express = require('express');
 const sequelize = require('./common/database'); 
 const eventRoutes = require('./common/routes/eventRoutes'); 
 
+require('./common/models/participant');
+
 const app = express();
 app.use(express.json());
 
@@ -15,6 +17,6 @@ sequelize.sync().then(() => {
     app.listen(PORT, () => {
         console.log(`Servidor rodando em http://localhost:${PORT}`);
     });
-}).catch(err => {
+}).catch(err => {   
     console.error('Erro ao conectar ao banco:', err);
 });
