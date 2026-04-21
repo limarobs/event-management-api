@@ -1,22 +1,48 @@
+require('dotenv').config();
 const express = require('express');
-const sequelize = require('./common/database'); 
-const eventRoutes = require('./common/routes/eventRoutes'); 
-
-require('./common/models/participant');
-
 const app = express();
+const sequelize = require('./common/database');
+
+const eventRoutes = require('./common/routes/eventRoutes');
+const authRoutes = require('./common/routes/authRoutes');
+
 app.use(express.json());
+app.use('/api/events', eventRoutes);
+app.use('/api/auth', authRoutes);
 
-app.get('/status', (req, res) => res.json({ status: 'Online' }));
+async function startServer() {
+    try {
+        await sequelize.authenticate();
+        console.log("Conexão com o banco estabelecida.");
 
-app.use('/events', eventRoutes);
+        await sequelize.sync();
+        console.log("Modelos sincronizados.");
 
-const PORT = 4000;
+        const User = require('./common/models/User');
 
-sequelize.sync().then(() => {
-    app.listen(PORT, () => {
-        console.log(`Servidor rodando em http://localhost:${PORT}`);
-    });
-}).catch(err => {   
-    console.error('Erro ao conectar ao banco:', err);
-});
+        if (!User || typeof User.findOrCreate !== 'function') {
+            throw new Error("O Model User não exportou a função findOrCreate. Verifique o arquivo User.js");
+        }
+
+        const [admin, created] = await User.findOrCreate({
+            where: { email: 'admin@admin.com' },
+            defaults: {
+                name: 'Admin',
+                password: 'adminpassword',
+                role: 'admin'
+            }
+        });
+
+        if (created) console.log("Admin criado.");
+        else console.log("Admin já existe.");
+
+        app.listen(3000, () => console.log("Servidor ON na porta 3000"));
+
+    } catch (error) {
+        console.error("Erro Crítico:", error.message);
+
+        console.error(error); 
+    }
+}
+
+startServer();

@@ -1,14 +1,11 @@
 const { DataTypes } = require('sequelize');
 const sequelize = require('../database');
-const Event = require('./events');
 
 const Participant = sequelize.define('Participant', {
+    eventId: { type: DataTypes.INTEGER, allowNull: false },
+    userId: { type: DataTypes.INTEGER, allowNull: false },
     name: { type: DataTypes.STRING, allowNull: false },
-    email: { type: DataTypes.STRING, allowNull: false },
-    phone: { type: DataTypes.STRING }
+    email: { type: DataTypes.STRING, allowNull: false }
 });
-
-Event.hasMany(Participant, { foreignKey: 'eventId', onDelete: 'CASCADE' });
-Participant.belongsTo(Event, { foreignKey: 'eventId' });
 
 module.exports = Participant;
