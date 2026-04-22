@@ -18,16 +18,30 @@ exports.getEventById = async (req, res) => {
 };
 
 exports.createEvent = async (req, res) => {
-    const event = await Event.create(req.body);
-    res.status(201).json({ message: "Evento criado com sucesso", data: { ...event.toJSON(), registeredParticipants: 0 } });
+    try {
+        const event = await Event.create(req.body);
+        res.status(201).json({ message: "Evento criado com sucesso", data: { ...event.toJSON(), registeredParticipants: 0 } });
+    } catch (error) {
+        if (error.message.includes('Data e hora do evento incompativeis')) {
+            return res.status(400).json({ message: error.message });
+        }
+        throw error;
+    }
 };
 
 exports.updateEvent = async (req, res) => {
-    const event = await Event.findByPk(req.params.id);
-    if (!event) return res.status(404).json({ message: "Evento não encontrado" });
-    await event.update(req.body);
-    const count = await Participant.count({ where: { eventId: event.id } });
-    res.json({ message: "Evento atualizado com sucesso", data: { ...event.toJSON(), registeredParticipants: count } });
+    try {
+        const event = await Event.findByPk(req.params.id);
+        if (!event) return res.status(404).json({ message: "Evento não encontrado" });
+        await event.update(req.body);
+        const count = await Participant.count({ where: { eventId: event.id } });
+        res.json({ message: "Evento atualizado com sucesso", data: { ...event.toJSON(), registeredParticipants: count } });
+    } catch (error) {
+        if (error.message.includes('Data e hora do evento incompativeis')) {
+            return res.status(400).json({ message: error.message });
+        }
+        throw error;
+    }
 };
 
 exports.deleteEvent = async (req, res) => {
