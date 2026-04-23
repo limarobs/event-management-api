@@ -10,6 +10,11 @@ app.use(express.json());
 app.use('/api/events', eventRoutes);
 app.use('/api/auth', authRoutes);
 
+app.use((err, req, res, next) => {
+    console.error('Erro não tratado:', err.message);
+    res.status(500).json({ message: "Erro interno do servidor" });
+});
+
 async function startServer() {
     try {
         await sequelize.authenticate();

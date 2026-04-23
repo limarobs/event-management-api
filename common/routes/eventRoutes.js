@@ -1,8 +1,7 @@
 const express = require('express');
 const router = express.Router();
 
-// Como você já está dentro de 'common', basta um '../' para subir um nível
-const eventCtrl = require('../controllers/eventsController'); // Verifique se tem o 's' no final do arquivo físico
+const eventCtrl = require('../controllers/eventsController'); 
 const partCtrl = require('../controllers/participantController');
 const authMid = require('../middleware/authMiddleware');
 const adminMid = require('../middleware/adminMiddleware');
