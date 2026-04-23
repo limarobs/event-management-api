@@ -1,5 +1,5 @@
 const Event = require('../models/Event');
-const Participant = require('../models/Participant');
+const Participant = require('../models/participant');
 
 exports.getAllEvents = async (req, res) => {
     try {

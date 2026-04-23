@@ -1,4 +1,4 @@
-const Participant = require('../models/Participant');
+const Participant = require('../models/participant');
 const Event = require('../models/Event');
 
 exports.getParticipants = async (req, res) => {
