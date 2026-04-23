@@ -14,7 +14,7 @@ A RESTful API for managing events and participants, built with Node.js, Express,
 
 - **Runtime**: Node.js
 - **Framework**: Express.js
-- **Database**: PostgreSQL (with SQLite support for development)
+- **Database**: PostgreSQL 
 - **ORM**: Sequelize
 - **Authentication**: JWT (jsonwebtoken)
 - **Password Hashing**: bcryptjs
@@ -29,7 +29,7 @@ A RESTful API for managing events and participants, built with Node.js, Express,
 
 1. Clone the repository:
 ```bash
-git clone <repository-url>
+git clone https://github.com/limarobs/event-management-api
 cd event-management-api
 ```
 
