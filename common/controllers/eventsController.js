@@ -1,24 +1,52 @@
 const Event = require('../models/Event');
 const Participant = require('../models/participant');
+const { updateEventStatus } = require('../helpers/eventHelper');
 
 exports.getAllEvents = async (req, res) => {
     try {
+        const userId = req.user?.id;
+
         const events = await Event.findAll();
 
-        const data = await Promise.all(
-            events.map(async (e) => {
-                const count = await Participant.count({
-                    where: { eventId: e.id }
-                });
+        const participants = await Participant.findAll({
+            attributes: ["eventId", "userId"]
+        });
 
-                return {
-                    ...e.toJSON(),
-                    registeredParticipants: count
-                };
-            })
-        );
+        const map = {};
+
+        participants.forEach(p => {
+            if (!map[p.eventId]) {
+                map[p.eventId] = [];
+            }
+            map[p.eventId].push(p.userId);
+        });
+
+        const data = events.map(event => {
+            const list = map[event.id] || [];
+
+            const registeredParticipants = list.length;
+
+            const max = event.maxParticipants ?? 0;
+
+            const availableSpots = max > 0 ? Math.max(max - registeredParticipants, 0) : null;
+
+            const isSoldOut = max > 0 ? registeredParticipants >= max : false;
+
+            const isUserRegistered = userId
+                ? list.includes(userId)
+                : false;
+
+            return {
+                ...event.toJSON(),
+                registeredParticipants,
+                availableSpots,
+                isSoldOut,
+                isUserRegistered
+            };
+        });
 
         res.json(data);
+
     } catch (error) {
         console.error('Erro ao listar eventos:', error.message);
         res.status(500).json({ message: "Erro ao listar eventos: " + error.message });
@@ -27,22 +55,41 @@ exports.getAllEvents = async (req, res) => {
 
 exports.getEventById = async (req, res) => {
     try {
+        const userId = req.user?.id;
+
         const event = await Event.findByPk(req.params.id);
 
         if (!event) {
-            return res
-                .status(404)
-                .json({ message: "Evento não encontrado" });
+            return res.status(404).json({ message: "Evento não encontrado" });
         }
 
-        const count = await Participant.count({
-            where: { eventId: event.id }
+        const participants = await Participant.findAll({
+            where: { eventId: event.id },
+            attributes: ["userId"]
         });
+
+        const userIds = participants.map(p => p.userId);
+
+        const registeredParticipants = userIds.length;
+
+        const max = event.maxParticipants ?? 0;
+
+        const availableSpots = max > 0 ? Math.max(max - registeredParticipants, 0) : null;
+
+        const isSoldOut = max > 0 ? registeredParticipants >= max : false;
+
+        const isUserRegistered = userId
+            ? userIds.includes(userId)
+            : false;
 
         res.json({
             ...event.toJSON(),
-            registeredParticipants: count
+            registeredParticipants,
+            availableSpots,
+            isSoldOut,
+            isUserRegistered
         });
+
     } catch (error) {
         console.error('Erro ao buscar evento:', error.message);
         res.status(500).json({ message: "Erro ao buscar evento: " + error.message });
@@ -57,24 +104,29 @@ exports.createEvent = async (req, res) => {
             message: "Evento criado com sucesso",
             data: {
                 ...event.toJSON(),
-                registeredParticipants: 0
+                registeredParticipants: 0,
+                availableSpots: event.maxParticipants ?? null,
+                isSoldOut: false,
+                isUserRegistered: false
             }
         });
+
     } catch (error) {
         console.error('Erro ao criar evento:', error.message);
-        if (
-            error.message.includes(
-                'Data e hora do evento incompativeis'
-            )
-        ) {
+
+        if (error.message.includes('Data e hora do evento incompativeis')) {
+            return res.status(400).json({ message: error.message });
+        }
+
+        if (error.name === 'SequelizeValidationError') {
             return res.status(400).json({
-                message: error.message
+                message: "Dados inválidos: " + error.message
             });
         }
-        if (error.name === 'SequelizeValidationError') {
-            return res.status(400).json({ message: "Dados inválidos: " + error.message });
-        }
-        res.status(500).json({ message: "Erro ao criar evento: " + error.message });
+
+        res.status(500).json({
+            message: "Erro ao criar evento: " + error.message
+        });
     }
 };
 
@@ -83,39 +135,45 @@ exports.updateEvent = async (req, res) => {
         const event = await Event.findByPk(req.params.id);
 
         if (!event) {
-            return res
-                .status(404)
-                .json({ message: "Evento não encontrado" });
+            return res.status(404).json({ message: "Evento não encontrado" });
         }
 
         await event.update(req.body);
 
-        const count = await Participant.count({
+        const participants = await Participant.findAll({
             where: { eventId: event.id }
         });
+
+        const registeredParticipants = participants.length;
+
+        const max = event.maxParticipants ?? 0;
 
         res.json({
             message: "Evento atualizado com sucesso",
             data: {
                 ...event.toJSON(),
-                registeredParticipants: count
+                registeredParticipants,
+                availableSpots: max > 0 ? Math.max(max - registeredParticipants, 0) : null,
+                isSoldOut: max > 0 ? registeredParticipants >= max : false
             }
         });
+
     } catch (error) {
         console.error('Erro ao atualizar evento:', error.message);
-        if (
-            error.message.includes(
-                'Data e hora do evento incompativeis'
-            )
-        ) {
+
+        if (error.message.includes('Data e hora do evento incompativeis')) {
+            return res.status(400).json({ message: error.message });
+        }
+
+        if (error.name === 'SequelizeValidationError') {
             return res.status(400).json({
-                message: error.message
+                message: "Dados inválidos: " + error.message
             });
         }
-        if (error.name === 'SequelizeValidationError') {
-            return res.status(400).json({ message: "Dados inválidos: " + error.message });
-        }
-        res.status(500).json({ message: "Erro ao atualizar evento: " + error.message });
+
+        res.status(500).json({
+            message: "Erro ao atualizar evento: " + error.message
+        });
     }
 };
 
@@ -126,14 +184,15 @@ exports.deleteEvent = async (req, res) => {
         });
 
         if (!deleted) {
-            return res
-                .status(404)
-                .json({ message: "Evento não encontrado" });
+            return res.status(404).json({ message: "Evento não encontrado" });
         }
 
         res.json({ message: "Evento excluído com sucesso" });
+
     } catch (error) {
         console.error('Erro ao excluir evento:', error.message);
-        res.status(500).json({ message: "Erro ao excluir evento: " + error.message });
+        res.status(500).json({
+            message: "Erro ao excluir evento: " + error.message
+        });
     }
 };
