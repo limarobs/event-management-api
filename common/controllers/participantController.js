@@ -1,6 +1,7 @@
 const Participant = require('../models/participant');
 const Event = require('../models/Event');
 const { updateEventStatus } = require('../helpers/eventHelper');
+const { sendSubscriptionConfirmation } = require('../helpers/emailHelper');
 
 exports.getParticipants = async (req, res) => {
     try {
@@ -22,35 +23,30 @@ exports.subscribe = async (req, res) => {
 
         const event = await Event.findByPk(id);
 
-        if (!event) {
+        if (!event)
             return res.status(404).json({ message: "Evento não encontrado" });
-        }
 
-        const exists = await Participant.findOne({
-            where: { eventId: id, userId }
-        });
+        const exists = await Participant.findOne({ where: { eventId: id, userId } });
 
-        if (exists) {
+        if (exists)
             return res.status(409).json({ message: "Usuário já inscrito" });
-        }
 
-        const count = await Participant.count({
-            where: { eventId: id }
-        });
+        const count = await Participant.count({ where: { eventId: id } });
 
-        if (count >= event.maxParticipants) {
+        if (count >= event.maxParticipants)
             return res.status(409).json({ message: "Evento lotado" });
-        }
 
-        const sub = await Participant.create({
-            eventId: id,
-            userId,
-            name,
-            email
-        });
+        const sub = await Participant.create({ eventId: id, userId, name, email });
 
-        // atualiza status do evento
         await updateEventStatus(id);
+
+        sendSubscriptionConfirmation({
+            name,
+            email,
+            title: event.title,
+            eventDate: event.date,
+            eventLocation: event.location
+        }).catch(err => console.error('Erro ao enviar email:', err.message));
 
         res.status(201).json({
             message: "Inscrição realizada com sucesso",
@@ -74,11 +70,9 @@ exports.cancelMySubscription = async (req, res) => {
             }
         });
 
-        if (!deleted) {
+        if (!deleted)
             return res.status(404).json({ message: "Inscrição não encontrada" });
-        }
 
-        // atualiza status do evento
         await updateEventStatus(id);
 
         res.json({ message: "Inscrição cancelada com sucesso" });
