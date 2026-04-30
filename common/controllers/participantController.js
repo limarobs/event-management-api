@@ -2,13 +2,13 @@ const Participant = require('../models/participant');
 const Event = require('../models/Event');
 const { updateEventStatus } = require('../helpers/eventHelper');
 const { sendSubscriptionConfirmation } = require('../helpers/emailHelper');
+const crypto = require('crypto');
 
 exports.getParticipants = async (req, res) => {
     try {
         const list = await Participant.findAll({
             where: { eventId: req.params.id }
         });
-
         res.json(list);
     } catch (error) {
         console.error('Erro ao listar participantes:', error.message);
@@ -36,7 +36,15 @@ exports.subscribe = async (req, res) => {
         if (count >= event.maxParticipants)
             return res.status(409).json({ message: "Evento lotado" });
 
-        const sub = await Participant.create({ eventId: id, userId, name, email });
+        const subscriptionToken = crypto.randomBytes(32).toString('hex');
+
+        const sub = await Participant.create({
+            eventId: id,
+            userId,
+            name,
+            email,
+            subscriptionToken
+        });
 
         await updateEventStatus(id);
 
@@ -45,7 +53,8 @@ exports.subscribe = async (req, res) => {
             email,
             title: event.title,
             eventDate: event.date,
-            eventLocation: event.location
+            eventLocation: event.location,
+            subscriptionToken
         }).catch(err => console.error('Erro ao enviar email:', err.message));
 
         res.status(201).json({
@@ -59,15 +68,39 @@ exports.subscribe = async (req, res) => {
     }
 };
 
+exports.validateSubscription = async (req, res) => {
+    try {
+        const { id, token } = req.params;
+
+        const participant = await Participant.findOne({
+            where: { eventId: id, subscriptionToken: token }
+        });
+
+        if (!participant)
+            return res.status(404).json({ valid: false, message: "Inscrição não encontrada" });
+
+        res.json({
+            valid: true,
+            message: "Inscrição válida",
+            data: {
+                name: participant.name,
+                email: participant.email,
+                eventId: participant.eventId
+            }
+        });
+
+    } catch (error) {
+        console.error('Erro ao validar inscrição:', error.message);
+        res.status(500).json({ message: "Erro ao validar inscrição: " + error.message });
+    }
+};
+
 exports.cancelMySubscription = async (req, res) => {
     try {
         const { id } = req.params;
 
         const deleted = await Participant.destroy({
-            where: {
-                eventId: id,
-                userId: req.user.id
-            }
+            where: { eventId: id, userId: req.user.id }
         });
 
         if (!deleted)

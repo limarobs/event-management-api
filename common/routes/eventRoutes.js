@@ -8,8 +8,8 @@ const adminMid = require('../middleware/adminMiddleware');
 const guestMid = require('../middleware/guestMiddleware');
 
 // Rotas de Eventos
-router.get('/', guestMid, eventCtrl.getAllEvents); 
-router.get('/:id', eventCtrl.getEventById);
+router.get('/', guestMid, eventCtrl.getAllEvents);
+router.get('/:id', guestMid, eventCtrl.getEventById);
 router.post('/', authMid, adminMid, eventCtrl.createEvent);
 router.put('/:id', authMid, adminMid, eventCtrl.updateEvent);
 router.delete('/:id', authMid, adminMid, eventCtrl.deleteEvent);
@@ -18,5 +18,6 @@ router.delete('/:id', authMid, adminMid, eventCtrl.deleteEvent);
 router.get('/:id/participants', authMid, partCtrl.getParticipants);
 router.post('/:id/participants', authMid, partCtrl.subscribe);
 router.delete('/:id/participants/me', authMid, partCtrl.cancelMySubscription);
+router.get('/:id/validate/:token', authMid, adminMid, partCtrl.validateSubscription); 
 
 module.exports = router;
