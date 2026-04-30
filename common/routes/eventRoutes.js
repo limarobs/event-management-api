@@ -5,9 +5,10 @@ const eventCtrl = require('../controllers/eventsController');
 const partCtrl = require('../controllers/participantController');
 const authMid = require('../middleware/authMiddleware');
 const adminMid = require('../middleware/adminMiddleware');
+const guestMid = require('../middleware/guestMiddleware');
 
 // Rotas de Eventos
-router.get('/', eventCtrl.getAllEvents);
+router.get('/', guestMid, eventCtrl.getAllEvents); 
 router.get('/:id', eventCtrl.getEventById);
 router.post('/', authMid, adminMid, eventCtrl.createEvent);
 router.put('/:id', authMid, adminMid, eventCtrl.updateEvent);
