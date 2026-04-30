@@ -37,7 +37,7 @@ async function startServer() {
     await sequelize.authenticate();
     console.log('Conexão com o banco estabelecida.');
 
-    await sequelize.sync();
+    await sequelize.sync({ alter: true });
     console.log('Modelos sincronizados.');
 
     const User = require('./common/models/User');

@@ -6,7 +6,18 @@ const User = sequelize.define('User', {
     name: { type: DataTypes.STRING, allowNull: false },
     email: { type: DataTypes.STRING, allowNull: false, unique: true },
     password: { type: DataTypes.STRING, allowNull: false },
-    role: { type: DataTypes.ENUM('admin', 'user'), defaultValue: 'user' }
+    role: { type: DataTypes.ENUM('admin', 'user'), defaultValue: 'user' },
+
+    refreshToken: { 
+        type: DataTypes.STRING(500), 
+        allowNull: true, 
+        defaultValue: null 
+    },
+    refreshTokenExpiry: { 
+        type: DataTypes.DATE, 
+        allowNull: true, 
+        defaultValue: null 
+    }
 }, {
     hooks: {
         beforeCreate: async (user) => {
@@ -15,5 +26,4 @@ const User = sequelize.define('User', {
     }
 });
 
-// CERTIFIQUE-SE DISSO AQUI:
 module.exports = User;
