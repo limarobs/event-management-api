@@ -39,7 +39,7 @@ exports.register = async (req, res) => {
         res.status(201).json({
             message: "Usuário cadastrado com sucesso",
             data: {
-                user: { id: user.id, name: user.name, email: user.email, role: user.role },
+                user: { name: user.name, email: user.email, role: user.role },
                 accessToken,
                 refreshToken
             }
@@ -73,7 +73,7 @@ exports.login = async (req, res) => {
         res.json({
             message: "Login realizado com sucesso",
             data: {
-                user: { id: user.id, name: user.name, email: user.email, role: user.role },
+                user: { name: user.name, email: user.email, role: user.role },
                 accessToken,
                 refreshToken
             }
