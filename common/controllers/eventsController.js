@@ -5,9 +5,24 @@ const User = require('../models/User');
 const { updateEventStatus } = require('../helpers/eventHelper');
 
 const asyncHandler = require('../helpers/asyncHandler');
+const { Op } = require('sequelize');
 
 const IGNORED_FIELDS = ['updatedAt', 'createdAt', 'id'];
 
+exports.getDeletedEvents = asyncHandler(async (req, res) => {
+    const events = await Event.findAll({
+        where: {
+            deletedAt: { [Op.ne]: null }
+        },
+        paranoid: false,
+        order: [['deletedAt', 'DESC']]
+    });
+
+    res.json({
+        success: true,
+        data: events
+    });
+});
 
 exports.getAllEvents = asyncHandler(async (req, res) => {
     const userId = req.user?.id;
@@ -61,7 +76,6 @@ exports.getAllEvents = asyncHandler(async (req, res) => {
     });
 });
 
-
 exports.getEventById = asyncHandler(async (req, res) => {
     const userId = req.user?.id;
 
@@ -91,7 +105,6 @@ exports.getEventById = asyncHandler(async (req, res) => {
     });
 });
 
-
 exports.createEvent = asyncHandler(async (req, res) => {
     const event = await Event.create(req.body);
 
@@ -113,7 +126,6 @@ exports.createEvent = asyncHandler(async (req, res) => {
         }
     });
 });
-
 
 exports.updateEvent = asyncHandler(async (req, res) => {
     const event = await Event.findByPk(req.params.id);
@@ -168,7 +180,6 @@ exports.updateEvent = asyncHandler(async (req, res) => {
     });
 });
 
-
 exports.deleteEvent = asyncHandler(async (req, res) => {
     const event = await Event.findByPk(req.params.id);
 
@@ -189,7 +200,6 @@ exports.deleteEvent = asyncHandler(async (req, res) => {
 
     res.json({ message: "Evento excluído com sucesso" });
 });
-
 
 exports.getEventHistory = asyncHandler(async (req, res) => {
     const event = await Event.findByPk(req.params.id);

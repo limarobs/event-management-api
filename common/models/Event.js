@@ -8,8 +8,15 @@ const Event = sequelize.define("Event", {
    startTime: { type: DataTypes.TIME, allowNull: false },
    endTime: { type: DataTypes.TIME, allowNull: false },
    location: { type: DataTypes.STRING, allowNull: true },
-   maxParticipants: { type: DataTypes.INTEGER, allowNull: true, validate: { min: 1 } }
+   maxParticipants: { 
+      type: DataTypes.INTEGER, 
+      allowNull: true, 
+      validate: { min: 1 } 
+   }
 }, {
+   timestamps: true,   
+   paranoid: true,     
+
    validate: {
       isEventDateValid() {
          const eventDateTime = new Date(`${this.date}T${this.startTime}`);
@@ -27,4 +34,3 @@ const Event = sequelize.define("Event", {
 });
 
 module.exports = Event;
-            

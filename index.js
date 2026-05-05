@@ -11,7 +11,6 @@ const authRoutes = require('./common/routes/authRoutes');
 const errorMiddleware = require('./common/middleware/errorMiddleware');
 const { logInfo, logError } = require('./common/helpers/logger');
 
-// 🔥 proteção global (nível profissional)
 process.on('unhandledRejection', (err) => {
   logError('UNHANDLED REJECTION', err);
 });
@@ -41,7 +40,6 @@ app.get('/', (req, res) => {
   });
 });
 
-// 🔥 middleware global de erro (TEM QUE SER O ÚLTIMO)
 app.use(errorMiddleware);
 
 async function startServer() {
