@@ -7,9 +7,11 @@ const sequelize = require('./common/database');
 
 const eventRoutes = require('./common/routes/eventRoutes');
 const authRoutes = require('./common/routes/authRoutes');
+const dashboardRoutes = require('./common/routes/dashboardRoutes');
 
 const errorMiddleware = require('./common/middleware/errorMiddleware');
 const { logInfo, logError } = require('./common/helpers/logger');
+
 
 process.on('unhandledRejection', (err) => {
   logError('UNHANDLED REJECTION', err);
@@ -33,6 +35,7 @@ app.use(express.json());
 // rotas
 app.use('/api/events', eventRoutes);
 app.use('/api/auth', authRoutes);
+app.use('/api/dashboard', dashboardRoutes);
 
 app.get('/', (req, res) => {
   res.json({
