@@ -7,5 +7,7 @@ const adminMid = require('../middleware/adminMiddleware');
 
 // GET /api/dashboard/stats
 router.get('/stats', authMid, adminMid, dashboardCtrl.getStats);
+router.get('/stats/top-events', authMid, adminMid, dashboardCtrl.getTopEvents);
+router.get('/stats/registrations-timeline', authMid, adminMid, dashboardCtrl.getRegistrationsTimeline);
 
 module.exports = router;

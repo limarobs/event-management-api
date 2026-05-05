@@ -93,7 +93,7 @@ async function seed() {
             createdUsers.push(...batch);
             process.stdout.write(`\r  ${Math.min(i + BATCH_SIZE, TOTAL_USERS)}/${TOTAL_USERS}`);
         }
-        console.log(`\n  ✔ ${createdUsers.length} usuários inseridos`);
+        console.log(`\n  ${createdUsers.length} usuários inseridos`);
 
         console.log(`\n Criando ${TOTAL_EVENTS} eventos...`);
         const eventsData = Array.from({ length: TOTAL_EVENTS }, (_, i) => {
@@ -119,7 +119,7 @@ async function seed() {
         console.log(`   ${createdEvents.length} eventos inseridos`);
 
        
-        console.log('\n🎟  Inscrevendo participantes...');
+        console.log('\n Inscrevendo participantes...');
         const participantsData = [];
         const enrolled = new Set(); 
 
@@ -151,7 +151,7 @@ async function seed() {
             });
             process.stdout.write(`\r  ${Math.min(i + BATCH_SIZE, participantsData.length)}/${participantsData.length}`);
         }
-        console.log(`\n  ✔ ${participantsData.length} inscrições inseridas`);
+        console.log(`\n  ${participantsData.length} inscrições inseridas`);
 
         
         console.log('\n─────────────────────────────────────');
