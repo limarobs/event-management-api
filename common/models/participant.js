@@ -10,6 +10,15 @@ const Participant = sequelize.define('Participant', {
         type: DataTypes.STRING(64),
         allowNull: true,
         unique: true
+    },
+    isCheckedIn: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false
+    },
+    checkedInAt: {
+        type: DataTypes.DATE,
+        allowNull: true,
+        defaultValue: null
     }
 });
 

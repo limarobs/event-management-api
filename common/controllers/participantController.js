@@ -7,7 +7,7 @@ const crypto = require('crypto');
 const asyncHandler = require('../helpers/asyncHandler');
 
 
-// 🔥 GET PARTICIPANTS
+// GET /api/events/:id/participants
 exports.getParticipants = asyncHandler(async (req, res) => {
     const list = await Participant.findAll({
         where: { eventId: req.params.id }
@@ -17,7 +17,29 @@ exports.getParticipants = asyncHandler(async (req, res) => {
 });
 
 
-// 🔥 SUBSCRIBE
+// GET /api/events/:id/participants/me
+exports.getMySubscription = asyncHandler(async (req, res) => {
+    const participant = await Participant.findOne({
+        where: {
+            eventId: req.params.id,
+            userId: req.user.id
+        }
+    });
+
+    if (!participant) {
+        const err = new Error("Inscrição não encontrada");
+        err.status = 404;
+        throw err;
+    }
+
+    res.json({
+        success: true,
+        data: participant
+    });
+});
+
+
+// POST /api/events/:id/participants
 exports.subscribe = asyncHandler(async (req, res) => {
     const { id } = req.params;
     const { id: userId, name, email } = req.user;
@@ -62,7 +84,6 @@ exports.subscribe = asyncHandler(async (req, res) => {
 
     await updateEventStatus(id);
 
-    // ⚠️ não quebrar fluxo se email falhar
     sendSubscriptionConfirmation({
         name,
         email,
@@ -70,9 +91,7 @@ exports.subscribe = asyncHandler(async (req, res) => {
         eventDate: event.date,
         eventLocation: event.location,
         subscriptionToken
-    }).catch(() => {
-        // erro já vai pro logger se você quiser melhorar depois
-    });
+    }).catch(() => {});
 
     res.status(201).json({
         message: "Inscrição realizada com sucesso",
@@ -81,7 +100,48 @@ exports.subscribe = asyncHandler(async (req, res) => {
 });
 
 
-// 🔥 VALIDATE SUBSCRIPTION
+// POST /api/events/:id/checkin
+exports.checkIn = asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const { subscriptionToken } = req.body;
+
+    const participant = await Participant.findOne({
+        where: {
+            eventId: id,
+            subscriptionToken
+        }
+    });
+
+    if (!participant) {
+        const err = new Error("Token inválido ou não pertence a este evento");
+        err.status = 404;
+        throw err;
+    }
+
+    if (participant.isCheckedIn) {
+        const err = new Error("Participante já realizou check-in");
+        err.status = 409;
+        throw err;
+    }
+
+    await participant.update({
+        isCheckedIn: true,
+        checkedInAt: new Date()
+    });
+
+    res.json({
+        success: true,
+        message: "Check-in realizado com sucesso",
+        data: {
+            name: participant.name,
+            email: participant.email,
+            checkedInAt: participant.checkedInAt
+        }
+    });
+});
+
+
+// GET /api/events/:id/validate/:token
 exports.validateSubscription = asyncHandler(async (req, res) => {
     const { id, token } = req.params;
 
@@ -110,7 +170,7 @@ exports.validateSubscription = asyncHandler(async (req, res) => {
 });
 
 
-// 🔥 CANCEL SUBSCRIPTION
+// DELETE /api/events/:id/participants/me
 exports.cancelMySubscription = asyncHandler(async (req, res) => {
     const { id } = req.params;
 
