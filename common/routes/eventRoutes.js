@@ -14,7 +14,7 @@ router.post('/', authMid, adminMid, eventCtrl.createEvent);
 router.put('/:id', authMid, adminMid, eventCtrl.updateEvent);
 router.delete('/:id', authMid, adminMid, eventCtrl.deleteEvent);
 
-// Histórico de alterações (admin only)
+// Histórico de alterações 
 router.get('/:id/history', authMid, adminMid, eventCtrl.getEventHistory);
 
 // Rotas de Participantes

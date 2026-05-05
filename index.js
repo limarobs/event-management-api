@@ -8,6 +8,19 @@ const sequelize = require('./common/database');
 const eventRoutes = require('./common/routes/eventRoutes');
 const authRoutes = require('./common/routes/authRoutes');
 
+const errorMiddleware = require('./common/middleware/errorMiddleware');
+const { logInfo, logError } = require('./common/helpers/logger');
+
+// 🔥 proteção global (nível profissional)
+process.on('unhandledRejection', (err) => {
+  logError('UNHANDLED REJECTION', err);
+});
+
+process.on('uncaughtException', (err) => {
+  logError('UNCAUGHT EXCEPTION', err);
+  process.exit(1);
+});
+
 app.use(cors({
   origin: [
     'http://localhost:4200',
@@ -18,6 +31,7 @@ app.use(cors({
 
 app.use(express.json());
 
+// rotas
 app.use('/api/events', eventRoutes);
 app.use('/api/auth', authRoutes);
 
@@ -27,18 +41,16 @@ app.get('/', (req, res) => {
   });
 });
 
-app.use((err, req, res, next) => {
-  console.error('Erro não tratado:', err.message);
-  res.status(500).json({ message: 'Erro interno do servidor' });
-});
+// 🔥 middleware global de erro (TEM QUE SER O ÚLTIMO)
+app.use(errorMiddleware);
 
 async function startServer() {
   try {
     await sequelize.authenticate();
-    console.log('Conexão com o banco estabelecida.');
+    logInfo('Conexão com o banco estabelecida.');
 
-    await sequelize.sync({ alter: true });
-    console.log('Modelos sincronizados.');
+    await sequelize.sync();
+    logInfo('Modelos sincronizados.');
 
     const User = require('./common/models/User');
 
@@ -51,18 +63,19 @@ async function startServer() {
       }
     });
 
-    if (created) console.log('Admin criado.');
-    else console.log('Admin já existe.');
+    if (created) logInfo('Admin criado.');
+    else logInfo('Admin já existe.');
 
     const PORT = process.env.PORT || 3000;
 
     app.listen(PORT, () => {
-      console.log(`Servidor ON na porta ${PORT}`);
-      console.log(`API: http://localhost:${PORT}`);
+      logInfo(`Servidor ON na porta ${PORT}`);
+      logInfo(`API: http://localhost:${PORT}`);
     });
+
   } catch (error) {
-    console.error('Erro Crítico:', error.message);
-    console.error(error);
+    logError('ERRO CRÍTICO AO INICIAR SERVIDOR', error);
+    process.exit(1); 
   }
 }
 

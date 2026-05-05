@@ -4,114 +4,132 @@ const { updateEventStatus } = require('../helpers/eventHelper');
 const { sendSubscriptionConfirmation } = require('../helpers/emailHelper');
 const crypto = require('crypto');
 
-exports.getParticipants = async (req, res) => {
-    try {
-        const list = await Participant.findAll({
-            where: { eventId: req.params.id }
-        });
-        res.json(list);
-    } catch (error) {
-        console.error('Erro ao listar participantes:', error.message);
-        res.status(500).json({ message: "Erro ao listar participantes: " + error.message });
+const asyncHandler = require('../helpers/asyncHandler');
+
+
+// 🔥 GET PARTICIPANTS
+exports.getParticipants = asyncHandler(async (req, res) => {
+    const list = await Participant.findAll({
+        where: { eventId: req.params.id }
+    });
+
+    res.json(list);
+});
+
+
+// 🔥 SUBSCRIBE
+exports.subscribe = asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const { id: userId, name, email } = req.user;
+
+    const event = await Event.findByPk(id);
+
+    if (!event) {
+        const err = new Error("Evento não encontrado");
+        err.status = 404;
+        throw err;
     }
-};
 
-exports.subscribe = async (req, res) => {
-    try {
-        const { id } = req.params;
-        const { id: userId, name, email } = req.user;
+    const exists = await Participant.findOne({
+        where: { eventId: id, userId }
+    });
 
-        const event = await Event.findByPk(id);
+    if (exists) {
+        const err = new Error("Usuário já inscrito");
+        err.status = 409;
+        throw err;
+    }
 
-        if (!event)
-            return res.status(404).json({ message: "Evento não encontrado" });
+    const count = await Participant.count({
+        where: { eventId: id }
+    });
 
-        const exists = await Participant.findOne({ where: { eventId: id, userId } });
+    if (count >= event.maxParticipants) {
+        const err = new Error("Evento lotado");
+        err.status = 409;
+        throw err;
+    }
 
-        if (exists)
-            return res.status(409).json({ message: "Usuário já inscrito" });
+    const subscriptionToken = crypto.randomBytes(32).toString('hex');
 
-        const count = await Participant.count({ where: { eventId: id } });
+    const sub = await Participant.create({
+        eventId: id,
+        userId,
+        name,
+        email,
+        subscriptionToken
+    });
 
-        if (count >= event.maxParticipants)
-            return res.status(409).json({ message: "Evento lotado" });
+    await updateEventStatus(id);
 
-        const subscriptionToken = crypto.randomBytes(32).toString('hex');
+    // ⚠️ não quebrar fluxo se email falhar
+    sendSubscriptionConfirmation({
+        name,
+        email,
+        title: event.title,
+        eventDate: event.date,
+        eventLocation: event.location,
+        subscriptionToken
+    }).catch(() => {
+        // erro já vai pro logger se você quiser melhorar depois
+    });
 
-        const sub = await Participant.create({
+    res.status(201).json({
+        message: "Inscrição realizada com sucesso",
+        data: sub
+    });
+});
+
+
+// 🔥 VALIDATE SUBSCRIPTION
+exports.validateSubscription = asyncHandler(async (req, res) => {
+    const { id, token } = req.params;
+
+    const participant = await Participant.findOne({
+        where: {
             eventId: id,
-            userId,
-            name,
-            email,
-            subscriptionToken
-        });
+            subscriptionToken: token
+        }
+    });
 
-        await updateEventStatus(id);
-
-        sendSubscriptionConfirmation({
-            name,
-            email,
-            title: event.title,
-            eventDate: event.date,
-            eventLocation: event.location,
-            subscriptionToken
-        }).catch(err => console.error('Erro ao enviar email:', err.message));
-
-        res.status(201).json({
-            message: "Inscrição realizada com sucesso",
-            data: sub
-        });
-
-    } catch (error) {
-        console.error('Erro ao realizar inscrição:', error.message);
-        res.status(500).json({ message: "Erro ao realizar inscrição: " + error.message });
+    if (!participant) {
+        const err = new Error("Inscrição não encontrada");
+        err.status = 404;
+        throw err;
     }
-};
 
-exports.validateSubscription = async (req, res) => {
-    try {
-        const { id, token } = req.params;
+    res.json({
+        valid: true,
+        message: "Inscrição válida",
+        data: {
+            name: participant.name,
+            email: participant.email,
+            eventId: participant.eventId
+        }
+    });
+});
 
-        const participant = await Participant.findOne({
-            where: { eventId: id, subscriptionToken: token }
-        });
 
-        if (!participant)
-            return res.status(404).json({ valid: false, message: "Inscrição não encontrada" });
+// 🔥 CANCEL SUBSCRIPTION
+exports.cancelMySubscription = asyncHandler(async (req, res) => {
+    const { id } = req.params;
 
-        res.json({
-            valid: true,
-            message: "Inscrição válida",
-            data: {
-                name: participant.name,
-                email: participant.email,
-                eventId: participant.eventId
-            }
-        });
+    const deleted = await Participant.destroy({
+        where: {
+            eventId: id,
+            userId: req.user.id
+        }
+    });
 
-    } catch (error) {
-        console.error('Erro ao validar inscrição:', error.message);
-        res.status(500).json({ message: "Erro ao validar inscrição: " + error.message });
+    if (!deleted) {
+        const err = new Error("Inscrição não encontrada");
+        err.status = 404;
+        throw err;
     }
-};
 
-exports.cancelMySubscription = async (req, res) => {
-    try {
-        const { id } = req.params;
+    await updateEventStatus(id);
 
-        const deleted = await Participant.destroy({
-            where: { eventId: id, userId: req.user.id }
-        });
-
-        if (!deleted)
-            return res.status(404).json({ message: "Inscrição não encontrada" });
-
-        await updateEventStatus(id);
-
-        res.json({ message: "Inscrição cancelada com sucesso" });
-
-    } catch (error) {
-        console.error('Erro ao cancelar inscrição:', error.message);
-        res.status(500).json({ message: "Erro ao cancelar inscrição: " + error.message });
-    }
-};
+    res.json({
+        message: "Inscrição cancelada com sucesso"
+    });
+});
