@@ -7,12 +7,25 @@ const app = express();
 
 const sequelize = require("./common/database");
 
+// ======================
 // ROTAS
+// ======================
+
 const eventRoutes = require("./common/routes/eventRoutes");
+
 const authRoutes = require("./common/routes/authRoutes");
+
 const dashboardRoutes = require("./common/routes/dashboardRoutes");
+
 const speakerRoutes = require("./common/routes/speakerRoutes");
+
 const newsRoutes = require("./common/routes/newsRoutes.js");
+
+const searchRoutes = require("./common/routes/searchRoutes");
+
+// ======================
+// MIDDLEWARES
+// ======================
 
 const errorMiddleware = require("./common/middleware/errorMiddleware");
 
@@ -21,17 +34,28 @@ const {
   logError
 } = require("./common/helpers/logger");
 
+// ======================
 // CAPTURA DE ERROS
+// ======================
+
 process.on("unhandledRejection", (err) => {
+
   logError("UNHANDLED REJECTION", err);
+
 });
 
 process.on("uncaughtException", (err) => {
+
   logError("UNCAUGHT EXCEPTION", err);
+
   process.exit(1);
+
 });
 
+// ======================
 // CORS
+// ======================
+
 app.use(cors({
   origin: [
     "http://localhost:4200",
@@ -40,11 +64,14 @@ app.use(cors({
   credentials: true
 }));
 
+// ======================
 // JSON
+// ======================
+
 app.use(express.json());
 
 // ======================
-// ROTAS
+// ROTAS API
 // ======================
 
 app.use("/api/events", eventRoutes);
@@ -57,7 +84,12 @@ app.use("/api/speakers", speakerRoutes);
 
 app.use("/api/news", newsRoutes);
 
-// TESTE
+app.use("/api/search", searchRoutes);
+
+// ======================
+// TESTES
+// ======================
+
 app.get("/", (req, res) => {
 
   res.json({
@@ -66,7 +98,6 @@ app.get("/", (req, res) => {
 
 });
 
-// TESTE NEWS
 app.get("/teste-news", (req, res) => {
 
   res.json({
@@ -75,10 +106,24 @@ app.get("/teste-news", (req, res) => {
 
 });
 
+app.get("/teste-search", (req, res) => {
+
+  res.json({
+    message: "Rota de busca funcionando"
+  });
+
+});
+
+// ======================
 // MIDDLEWARE DE ERRO
+// ======================
+
 app.use(errorMiddleware);
 
+// ======================
 // START SERVIDOR
+// ======================
+
 async function startServer() {
 
   try {
@@ -129,6 +174,8 @@ async function startServer() {
 
       logInfo(`News API: http://localhost:${PORT}/api/news`);
 
+      logInfo(`Search API: http://localhost:${PORT}/api/search`);
+
     });
 
   } catch (error) {
@@ -142,7 +189,9 @@ async function startServer() {
 }
 
 if (require.main === module) {
+
   startServer();
+
 }
 
 module.exports = app;
