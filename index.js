@@ -9,6 +9,9 @@ const eventRoutes = require('./common/routes/eventRoutes');
 const authRoutes = require('./common/routes/authRoutes');
 const dashboardRoutes = require('./common/routes/dashboardRoutes');
 
+// NOVA ROTA
+const speakerRoutes = require('./common/routes/speakerRoutes');
+
 const errorMiddleware = require('./common/middleware/errorMiddleware');
 const { logInfo, logError } = require('./common/helpers/logger');
 
@@ -32,10 +35,13 @@ app.use(cors({
 
 app.use(express.json());
 
-// rotas
+// ROTAS
 app.use('/api/events', eventRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+
+// NOVA ROTA DE PALESTRANTES
+app.use('/api/speakers', speakerRoutes);
 
 app.get('/', (req, res) => {
   res.json({
@@ -64,19 +70,23 @@ async function startServer() {
       }
     });
 
-    if (created) logInfo('Admin criado.');
-    else logInfo('Admin já existe.');
+    if (created) {
+      logInfo('Admin criado.');
+    } else {
+      logInfo('Admin já existe.');
+    }
 
     const PORT = process.env.PORT || 3000;
 
     app.listen(PORT, () => {
       logInfo(`Servidor ON na porta ${PORT}`);
       logInfo(`API: http://localhost:${PORT}`);
+      logInfo(`Speakers API: http://localhost:${PORT}/api/speakers`);
     });
 
   } catch (error) {
     logError('ERRO CRÍTICO AO INICIAR SERVIDOR', error);
-    process.exit(1); 
+    process.exit(1);
   }
 }
 
