@@ -218,3 +218,23 @@ exports.getEventHistory = asyncHandler(async (req, res) => {
 
     res.json(history);
 });
+
+exports.getEventOrderedByName = asyncHandler(async (req, res) => {
+     const { sortBy = 'name', order = 'ASC' } = req.query;
+
+    const allowedSortFields = {
+        name: 'name',
+        createdAt: 'createdAt',
+        presence: 'isCheckedIn'
+    };
+
+    const sortField = allowedSortFields[sortBy] ?? 'name';
+    const sortOrder = order.toUpperCase() === 'DESC' ? 'DESC' : 'ASC';
+
+    const list = await Participant.findAll({
+        where: { eventId: req.params.id },
+        order: [[sortField, sortOrder]]
+    });
+
+    res.json(list);
+});
