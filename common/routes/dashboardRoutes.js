@@ -3,7 +3,7 @@ const router = express.Router();
 
 const dashboardCtrl = require('../controllers/dashboardController');
 const authMid = require('../middleware/authMiddleware');
-const adminMid = require('../middleware/adminMiddleware');
+const adminMid = require('../middleware/adminMiddleware.mjs').default;
 
 // GET /api/dashboard/stats
 router.get('/stats', authMid, adminMid, dashboardCtrl.getStats);

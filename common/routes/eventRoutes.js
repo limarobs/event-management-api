@@ -4,7 +4,7 @@ const router = express.Router();
 const eventCtrl = require('../controllers/eventsController');
 const partCtrl = require('../controllers/participantController');
 const authMid = require('../middleware/authMiddleware');
-const adminMid = require('../middleware/adminMiddleware');
+const adminMid = require('../middleware/adminMiddleware.mjs').default;
 const guestMid = require('../middleware/guestMiddleware');
 
 
