@@ -11,6 +11,7 @@ describe('Auth Controller', () => {
 
     let req;
     let res;
+    let next;
 
     beforeEach(() => {
         req = {
@@ -21,6 +22,7 @@ describe('Auth Controller', () => {
             status: jest.fn().mockReturnThis(),
             json: jest.fn()
         };
+        next = jest.fn();
     });
 
     it('deve cadastrar usuário com sucesso', async () => {
@@ -37,12 +39,13 @@ describe('Auth Controller', () => {
             id: 1,
             name: "João",
             email: "joao@email.com",
-            role: "user"
+            role: "user",
+            update: jest.fn()
         });
 
         jwt.sign.mockReturnValue("token-fake");
 
-        await authController.register(req, res);
+        await authController.register(req, res, next);
 
         expect(res.status).toHaveBeenCalledWith(201);
     });
@@ -57,9 +60,25 @@ describe('Auth Controller', () => {
 
         User.findOne.mockResolvedValue({ id: 1 });
 
-        await authController.register(req, res);
+        await authController.register(req, res, next);
 
-        expect(res.status).toHaveBeenCalledWith(409);
+        expect(next).toHaveBeenCalled()
+        expect(next.mock.calls[0][0].status).toBe(409);
+    });
+
+      it('deve cadastrar usuário com sucesso', async () => {
+        req.body = { name: "João", email: "joao@email.com", password: "123456" };
+        User.findOne.mockResolvedValue(null);
+        User.create.mockResolvedValue({
+            id: 1, name: "João", email: "joao@email.com", role: "user",
+            update: jest.fn()
+        });
+        jwt.sign.mockReturnValue("token-fake");
+
+        await authController.register(req, res, next);
+
+        expect(next).not.toHaveBeenCalled();
+        expect(res.status).toHaveBeenCalledWith(201);
     });
 
     it('deve fazer login com sucesso', async () => {
@@ -74,14 +93,15 @@ describe('Auth Controller', () => {
             email: "joao@email.com",
             password: "hashed",
             role: "user",
-            name: "João"
+            name: "João",
+            update: jest.fn()
         });
 
         bcrypt.compare.mockResolvedValue(true);
         jwt.sign.mockReturnValue("token123");
 
-        await authController.login(req, res);
-
+        await authController.login(req, res, next);
+        expect(next).not.toHaveBeenCalled();
         expect(res.json).toHaveBeenCalled();
     });
 
