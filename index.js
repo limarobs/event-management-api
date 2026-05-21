@@ -132,7 +132,7 @@ async function startServer() {
 
     logInfo("Conexão com o banco estabelecida.");
 
-    await sequelize.sync();
+    await sequelize.sync({ alter: true });
 
     logInfo("Modelos sincronizados.");
 
