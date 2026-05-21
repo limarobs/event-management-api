@@ -98,12 +98,20 @@ exports.getAllEvents = asyncHandler(async (req, res) => {
 
         const list = map[event.id] || [];
 
-        const registeredParticipants = list.length;
+        const registeredParticipants = list.filter(p => 
+            ['pending', 'approved'].includes(p.approvalStatus)
+        ).length;
 
         const max = event.maxParticipants ?? 0;
 
+        const uid = (userId !== undefined && userId !== null)
+            ? Number(userId)
+            : null;
+
         const userParticipant =
-            list.find(p => p.userId === userId);
+            uid !== null
+                ? list.find(p => Number(p.userId) === uid)
+                : null;
 
         return {
 
@@ -172,15 +180,20 @@ exports.getEventById = asyncHandler(async (req, res) => {
         ]
     });
 
-    const registeredParticipants =
-        participants.length;
+    const registeredParticipants = participants.filter(p => 
+        ['pending', 'approved'].includes(p.approvalStatus)
+    ).length;
 
     const max = event.maxParticipants ?? 0;
 
+    const uid = (userId !== undefined && userId !== null)
+        ? Number(userId)
+        : null;
+
     const userParticipant =
-        participants.find(
-            p => p.userId === userId
-        );
+        uid !== null
+            ? participants.find(p => Number(p.userId) === uid)
+            : null;
 
     res.json({
 
@@ -288,7 +301,10 @@ exports.updateEvent = asyncHandler(async (req, res) => {
 
     const participants = await Participant.findAll({
         where: {
-            eventId: event.id
+            eventId: event.id,
+            approvalStatus: {
+                [Op.in]: ['pending', 'approved']
+            }
         }
     });
 
@@ -298,7 +314,7 @@ exports.updateEvent = asyncHandler(async (req, res) => {
     const max = event.maxParticipants ?? 0;
 
     res.json({
-        message: "Evento atualizado com sucesso",
+        message: "Evento updated com sucesso",
         data: {
             ...event.toJSON(),
             registeredParticipants,

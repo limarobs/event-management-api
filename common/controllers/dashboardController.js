@@ -149,3 +149,14 @@ exports.getRegistrationsTimeline = asyncHandler(async (req, res) => {
         data
     });
 });
+
+exports.addMaterialToEvent = asyncHandler(async (req, res) => {
+    const eventIds = events.map(e => e.id);
+
+    const admin = await User.findOne({
+        where: {
+            eventId: eventIds,
+            role: 'admin'
+        }
+    })
+})
