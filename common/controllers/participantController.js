@@ -9,6 +9,7 @@ const asyncHandler = require('../helpers/asyncHandler');
 
 // GET /api/events/:id/participants
 exports.getParticipants = asyncHandler(async (req, res) => {
+
     const { sortBy = 'name', order = 'ASC' } = req.query;
 
     const allowedSortFields = {
@@ -18,10 +19,16 @@ exports.getParticipants = asyncHandler(async (req, res) => {
     };
 
     const sortField = allowedSortFields[sortBy] ?? 'name';
-    const sortOrder = order.toUpperCase() === 'DESC' ? 'DESC' : 'ASC';
+
+    const sortOrder =
+        order.toUpperCase() === 'DESC'
+            ? 'DESC'
+            : 'ASC';
 
     const list = await Participant.findAll({
-        where: { eventId: req.params.id },
+        where: {
+            eventId: req.params.id
+        },
         order: [[sortField, sortOrder]]
     });
 
@@ -31,6 +38,7 @@ exports.getParticipants = asyncHandler(async (req, res) => {
 
 // GET /api/events/:id/participants/me
 exports.getMySubscription = asyncHandler(async (req, res) => {
+
     const participant = await Participant.findOne({
         where: {
             eventId: req.params.id,
@@ -53,8 +61,14 @@ exports.getMySubscription = asyncHandler(async (req, res) => {
 
 // POST /api/events/:id/participants
 exports.subscribe = asyncHandler(async (req, res) => {
+
     const { id } = req.params;
-    const { id: userId, name, email } = req.user;
+
+    const {
+        id: userId,
+        name,
+        email
+    } = req.user;
 
     const event = await Event.findByPk(id);
 
@@ -65,7 +79,10 @@ exports.subscribe = asyncHandler(async (req, res) => {
     }
 
     const exists = await Participant.findOne({
-        where: { eventId: id, userId }
+        where: {
+            eventId: id,
+            userId
+        }
     });
 
     if (exists) {
@@ -75,7 +92,9 @@ exports.subscribe = asyncHandler(async (req, res) => {
     }
 
     const count = await Participant.count({
-        where: { eventId: id }
+        where: {
+            eventId: id
+        }
     });
 
     if (count >= event.maxParticipants) {
@@ -84,14 +103,21 @@ exports.subscribe = asyncHandler(async (req, res) => {
         throw err;
     }
 
-    const subscriptionToken = crypto.randomBytes(32).toString('hex');
+    const subscriptionToken =
+        crypto.randomBytes(32).toString('hex');
+
+    const approvalStatus =
+        event.approvalMode === 'manual'
+            ? 'pending'
+            : 'approved';
 
     const sub = await Participant.create({
         eventId: id,
         userId,
         name,
         email,
-        subscriptionToken
+        subscriptionToken,
+        approvalStatus
     });
 
     await updateEventStatus(id);
@@ -106,15 +132,74 @@ exports.subscribe = asyncHandler(async (req, res) => {
     }).catch(() => {});
 
     res.status(201).json({
-        message: "Inscrição realizada com sucesso",
+        message:
+            approvalStatus === 'pending'
+                ? "Inscrição enviada para aprovação"
+                : "Inscrição realizada com sucesso",
+
         data: sub
+    });
+});
+
+
+// PATCH /api/events/:eventId/participants/:participantId/approval
+exports.updateApprovalStatus = asyncHandler(async (req, res) => {
+
+    const {
+        participantId,
+        eventId
+    } = req.params;
+
+    const {
+        approvalStatus,
+        approvalReason
+    } = req.body;
+
+    const allowed = [
+        'pending',
+        'approved',
+        'rejected'
+    ];
+
+    if (!allowed.includes(approvalStatus)) {
+
+        const err = new Error("Status inválido");
+        err.status = 400;
+        throw err;
+    }
+
+    const participant = await Participant.findOne({
+        where: {
+            id: participantId,
+            eventId
+        }
+    });
+
+    if (!participant) {
+
+        const err = new Error("Participante não encontrado");
+        err.status = 404;
+        throw err;
+    }
+
+    await participant.update({
+        approvalStatus,
+        approvalReason
+    });
+
+    res.json({
+        success: true,
+        message: "Status atualizado com sucesso",
+        data: participant
     });
 });
 
 
 // POST /api/events/:id/checkin
 exports.checkIn = asyncHandler(async (req, res) => {
+
     const { id } = req.params;
+
     const { subscriptionToken } = req.body;
 
     const participant = await Participant.findOne({
@@ -125,13 +210,31 @@ exports.checkIn = asyncHandler(async (req, res) => {
     });
 
     if (!participant) {
-        const err = new Error("Token inválido ou não pertence a este evento");
+
+        const err = new Error(
+            "Token inválido ou não pertence a este evento"
+        );
+
         err.status = 404;
         throw err;
     }
 
+    if (participant.approvalStatus !== 'approved') {
+
+        const err = new Error(
+            "Participante ainda não aprovado"
+        );
+
+        err.status = 403;
+        throw err;
+    }
+
     if (participant.isCheckedIn) {
-        const err = new Error("Participante já realizou check-in");
+
+        const err = new Error(
+            "Participante já realizou check-in"
+        );
+
         err.status = 409;
         throw err;
     }
@@ -155,6 +258,7 @@ exports.checkIn = asyncHandler(async (req, res) => {
 
 // GET /api/events/:id/validate/:token
 exports.validateSubscription = asyncHandler(async (req, res) => {
+
     const { id, token } = req.params;
 
     const participant = await Participant.findOne({
@@ -165,6 +269,7 @@ exports.validateSubscription = asyncHandler(async (req, res) => {
     });
 
     if (!participant) {
+
         const err = new Error("Inscrição não encontrada");
         err.status = 404;
         throw err;
@@ -176,7 +281,8 @@ exports.validateSubscription = asyncHandler(async (req, res) => {
         data: {
             name: participant.name,
             email: participant.email,
-            eventId: participant.eventId
+            eventId: participant.eventId,
+            approvalStatus: participant.approvalStatus
         }
     });
 });
@@ -184,6 +290,7 @@ exports.validateSubscription = asyncHandler(async (req, res) => {
 
 // DELETE /api/events/:id/participants/me
 exports.cancelMySubscription = asyncHandler(async (req, res) => {
+
     const { id } = req.params;
 
     const deleted = await Participant.destroy({
@@ -194,6 +301,7 @@ exports.cancelMySubscription = asyncHandler(async (req, res) => {
     });
 
     if (!deleted) {
+
         const err = new Error("Inscrição não encontrada");
         err.status = 404;
         throw err;
