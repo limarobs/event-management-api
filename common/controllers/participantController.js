@@ -25,9 +25,14 @@ exports.getParticipants = asyncHandler(async (req, res) => {
             ? 'DESC'
             : 'ASC';
 
+    const { Op } = require('sequelize');
+
     const list = await Participant.findAll({
         where: {
-            eventId: req.params.id
+            eventId: req.params.id,
+            approvalStatus: {
+                [Op.ne]: 'rejected'
+            }
         },
         order: [[sortField, sortOrder]]
     });
@@ -86,7 +91,13 @@ exports.subscribe = asyncHandler(async (req, res) => {
     });
 
     if (exists) {
-        const err = new Error("Usuário já inscrito");
+        const err = new Error(
+            exists.approvalStatus === 'pending'
+                ? 'Inscrição pendente: não é possível inscrever novamente'
+                : exists.approvalStatus === 'rejected'
+                    ? 'Inscrição rejeitada: não é possível inscrever novamente'
+                    : 'Usuário já inscrito'
+        );
         err.status = 409;
         throw err;
     }
