@@ -23,6 +23,8 @@ const newsRoutes = require("./common/routes/newsRoutes.js");
 
 const searchRoutes = require("./common/routes/searchRoutes");
 
+const materialsRoutes = require("./common/routes/materialsRoutes");
+
 // ======================
 // MIDDLEWARES
 // ======================
@@ -85,6 +87,8 @@ app.use("/api/speakers", speakerRoutes);
 app.use("/api/news", newsRoutes);
 
 app.use("/api/search", searchRoutes);
+
+app.use("/api/events/:id/materials", materialsRoutes);
 
 // ======================
 // TESTES
