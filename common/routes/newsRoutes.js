@@ -8,16 +8,16 @@ const router = express.Router();
 const speakerController = require('../controllers/speakerController');
 
 // Rota para listar todos os palestrantes
-router.get('/', speakerController.index);
+router.get('/', speakerController.getSpeakers);
 
 // Rota para cadastrar um novo palestrante
-router.post('/', speakerController.store);
+router.post('/', speakerController.createSpeaker);
 
 // Rota para atualizar um palestrante
-router.put('/:id', speakerController.update);
+router.put('/:id', speakerController.updateSpeaker);
 
 // Rota para remover um palestrante
-router.delete('/:id', speakerController.delete);
+router.delete('/:id', speakerController.deleteSpeaker);
 
 // Exporta as rotas
 module.exports = router;
