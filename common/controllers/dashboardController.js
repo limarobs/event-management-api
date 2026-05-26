@@ -83,7 +83,7 @@ exports.getTopEvents = asyncHandler(async (req, res) => {
             return {
                 id:          event.id,
                 title:       event.title,
-                date:        event.date,
+                date:        event.startDate,
                 location:    event.location,
                 registered,
                 capacity,

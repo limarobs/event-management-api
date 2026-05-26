@@ -100,10 +100,12 @@ async function seed() {
             const startHour  = rand(8, 18);
             const endHour    = startHour + rand(1, 3);
             const maxPart    = Math.random() > 0.2 ? rand(10, 200) : null; // 20% sem limite
+            const startDate = futureDate(rand(3, 180));
             return {
                 title:           `${pick(eventTitles)} #${i + 1}`,
                 description:     `Descrição do evento ${i + 1}. Venha participar!`,
-                date:            futureDate(rand(3, 180)),
+                startDate,
+                endDate:         startDate,
                 startTime:       timeStr(startHour),
                 endTime:         timeStr(Math.min(endHour, 22)),
                 location:        pick(locations),

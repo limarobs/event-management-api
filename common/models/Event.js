@@ -15,12 +15,12 @@ const Event = sequelize.define("Event", {
 
    startDate: {
       type: DataTypes.DATEONLY,
-      allowNull: true
+      allowNull: false
    },
 
    endDate: {
       type: DataTypes.DATEONLY,
-      allowNull: true
+      allowNull: false
    },
 
    startTime: {
@@ -66,33 +66,34 @@ const Event = sequelize.define("Event", {
 
       isEventDateValid() {
 
-         if (!this.startDate || !this.startTime) {
+         if (
+            !this.startDate ||
+            !this.endDate ||
+            !this.startTime ||
+            !this.endTime
+         ) {
             return;
          }
 
-         const eventDateTime = new Date(
+         const start = new Date(
             `${this.startDate}T${this.startTime}`
+         );
+
+         const end = new Date(
+            `${this.endDate}T${this.endTime}`
          );
 
          const now = new Date();
 
-         if (eventDateTime < now) {
-            throw new Error("Data e hora de início do evento incompatíveis");
-         }
-      },
-
-      isEndTimeAfterStartTime() {
-
-         if (
-            this.startDate &&
-            this.endDate &&
-            this.startDate === this.endDate &&
-            this.startTime &&
-            this.endTime &&
-            this.endTime <= this.startTime
-         ) {
+         if (start < now) {
             throw new Error(
-               "A hora de fim deve ser posterior à hora de início"
+               "O evento não pode iniciar no passado"
+            );
+         }
+
+         if (end <= start) {
+            throw new Error(
+               "A data/hora final deve ser posterior à inicial"
             );
          }
       }
