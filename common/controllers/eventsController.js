@@ -155,11 +155,11 @@ exports.getAllEvents = asyncHandler(async (req, res) => {
                     ? userParticipant.approvalStatus
                     : null,
             
-            isUserCheckedIn:
+            isCheckedIn:
                 userParticipant
                     ? userParticipant.isCheckedIn
                     : false,
-        };
+                    };
     });
 
     const totalPages = Math.ceil(totalItems / limit);
@@ -245,7 +245,7 @@ exports.getEventById = asyncHandler(async (req, res) => {
                 ? userParticipant.approvalStatus
                 : null,
         
-        isUserCheckedIn:
+        isCheckedIn:
             userParticipant
                 ? userParticipant.isCheckedIn
                 : false
