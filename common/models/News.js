@@ -2,7 +2,7 @@
 const { DataTypes } = require('sequelize');
 
 // Importa a conexão com o banco
-const sequelize = require('../config/database');
+const sequelize = require('../database');
 
 // Cria o model de notícias
 const News = sequelize.define('News', {
