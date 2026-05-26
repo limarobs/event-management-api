@@ -245,13 +245,14 @@ exports.checkIn = asyncHandler(async (req, res) => {
         throw err;
     }
 
-    const event = await Event.findByPk(id);
-    if (event) {
-        const endDateTime = getEventEndDateTime(event);
-        if (new Date() > endDateTime) {
-            const err = new Error("Evento já encerrado");
-            err.status = 400;
-            throw err;
+    const event = await Event.findByPk(id);// Busca no banco o evento correspondente ao ID informado
+    if (event) {// Verifica se o evento foi encontrado
+
+        const endDateTime = getEventEndDateTime(event);// Calcula a data e hora de término do evento
+        if (new Date() > endDateTime) {// Verifica se o horário atual já ultrapassou o término do evento
+            const err = new Error("Evento já encerrado");// Cria um erro informando que o evento já terminou
+            err.status = 400;// Define o código HTTP 400 (requisição inválida)
+            throw err; // Interrompe a execução e retorna o erro para o cliente
         }
     }
 
