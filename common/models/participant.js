@@ -26,7 +26,8 @@ const Participant = sequelize.define('Participant', {
     approvalStatus: {
         type: DataTypes.ENUM('pending', 'approved', 'rejected'),
         allowNull: false,
-        defaultValue: 'approved'
+        defaultValue: 'pending',
+        field: 'status'
     },
 
     approvalReason: {
