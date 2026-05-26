@@ -1,23 +1,15 @@
-// Importa o Express
 const express = require('express');
 
-// Cria o sistema de rotas
 const router = express.Router();
 
-// Importa o controller dos palestrantes
-const speakerController = require('../controllers/speakerController');
+const newsController = require('../controllers/newsController');
 
-// Rota para listar todos os palestrantes
-router.get('/', speakerController.getSpeakers);
+router.get('/', newsController.getNews);
 
-// Rota para cadastrar um novo palestrante
-router.post('/', speakerController.createSpeaker);
+router.post('/', newsController.createNews);
 
-// Rota para atualizar um palestrante
-router.put('/:id', speakerController.updateSpeaker);
+router.put('/:id', newsController.updateNews);
 
-// Rota para remover um palestrante
-router.delete('/:id', speakerController.deleteSpeaker);
+router.delete('/:id', newsController.deleteNews);
 
-// Exporta as rotas
 module.exports = router;
