@@ -5,7 +5,8 @@
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js",
-    "test": "jest --detectOpenHandles --forceExit"
+    "test": "jest --detectOpenHandles --forceExit",
+    "migrate": "node migrations/add_event_dates_and_fix_enum.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
