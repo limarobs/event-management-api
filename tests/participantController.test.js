@@ -58,7 +58,8 @@ describe('Participant Controller', () => {
     it('deve inscrever usuário', async () => {
         Event.findByPk.mockResolvedValue({
             id: 1, maxParticipants: 10,
-            title: 'Test event', date: new Date(), location: 'Test',
+            title: 'Test event', startDate: '2026-05-26', endDate: '2026-05-26',
+            startTime: '10:00:00', endTime: '12:00:00', location: 'Test',
             update: jest.fn()
         });
         Participant.findOne.mockResolvedValue(null);
@@ -74,7 +75,8 @@ describe('Participant Controller', () => {
     it('deve bloquear nova inscrição quando estiver pendente', async () => {
         Event.findByPk.mockResolvedValue({
             id: 1, maxParticipants: 10,
-            title: 'Test event', date: new Date(), location: 'Test',
+            title: 'Test event', startDate: '2026-05-26', endDate: '2026-05-26',
+            startTime: '10:00:00', endTime: '12:00:00', location: 'Test',
             update: jest.fn()
         });
         Participant.findOne.mockResolvedValue({ approvalStatus: 'pending' });
@@ -89,7 +91,8 @@ describe('Participant Controller', () => {
     it('deve bloquear nova inscrição quando estiver rejeitada', async () => {
         Event.findByPk.mockResolvedValue({
             id: 1, maxParticipants: 10,
-            title: 'Test event', date: new Date(), location: 'Test',
+            title: 'Test event', startDate: '2026-05-26', endDate: '2026-05-26',
+            startTime: '10:00:00', endTime: '12:00:00', location: 'Test',
             update: jest.fn()
         });
         Participant.findOne.mockResolvedValue({ approvalStatus: 'rejected' });
@@ -117,7 +120,8 @@ describe('Participant Controller', () => {
     it('debug subscribe', async () => {
     Event.findByPk.mockResolvedValue({
         id: 1, maxParticipants: 10,
-        title: 'Test event', date: new Date(), location: 'Test',
+        title: 'Test event', startDate: '2026-05-26', endDate: '2026-05-26',
+        startTime: '10:00:00', endTime: '12:00:00', location: 'Test',
         update: jest.fn()
     });
     Participant.findOne.mockResolvedValue(null);

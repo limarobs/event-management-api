@@ -6,6 +6,14 @@ const crypto = require('crypto');
 
 const asyncHandler = require('../helpers/asyncHandler');
 
+function getEventEndDateTime(event) {
+    return new Date(`${event.endDate}T${event.endTime}`);
+}
+
+function getEventStartDateTime(event) {
+    return new Date(`${event.startDate}T${event.startTime}`);
+}
+
 
 // GET /api/events/:id/participants
 exports.getParticipants = asyncHandler(async (req, res) => {
@@ -83,6 +91,13 @@ exports.subscribe = asyncHandler(async (req, res) => {
         throw err;
     }
 
+    const eventEndDateTime = getEventEndDateTime(event);
+    if (new Date() > eventEndDateTime) {
+        const err = new Error("Evento já encerrado");
+        err.status = 400;
+        throw err;
+    }
+
     const exists = await Participant.findOne({
         where: {
             eventId: id,
@@ -137,7 +152,7 @@ exports.subscribe = asyncHandler(async (req, res) => {
         name,
         email,
         title: event.title,
-        eventDate: event.date,
+        eventDate: event.startDate,
         eventLocation: event.location,
         subscriptionToken
     }).catch(() => {});
@@ -228,6 +243,16 @@ exports.checkIn = asyncHandler(async (req, res) => {
 
         err.status = 404;
         throw err;
+    }
+
+    const event = await Event.findByPk(id);
+    if (event) {
+        const endDateTime = getEventEndDateTime(event);
+        if (new Date() > endDateTime) {
+            const err = new Error("Evento já encerrado");
+            err.status = 400;
+            throw err;
+        }
     }
 
     if (participant.approvalStatus !== 'approved') {

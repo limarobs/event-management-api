@@ -9,6 +9,20 @@ const asyncHandler = require('../helpers/asyncHandler');
 
 const { Op } = require('sequelize');
 
+function normalizeEventPayload(body) {
+    if (!body) {
+        return;
+    }
+
+    if (!body.startDate && body.date) {
+        body.startDate = body.date;
+    }
+
+    if (!body.endDate && body.date) {
+        body.endDate = body.date;
+    }
+}
+
 const IGNORED_FIELDS = [
     'updatedAt',
     'createdAt',
@@ -64,7 +78,7 @@ exports.getAllEvents = asyncHandler(async (req, res) => {
     } = await Event.findAndCountAll({
         limit,
         offset,
-        order: [['date', 'ASC'], ['startTime', 'ASC']]
+        order: [['startDate', 'ASC'], ['startTime', 'ASC']]
     });
 
     const eventIds = events.map(e => e.id);
@@ -115,9 +129,11 @@ exports.getAllEvents = asyncHandler(async (req, res) => {
 
         return {
 
-            ...event.toJSON(),
+        ...event.toJSON(),
 
-            registeredParticipants,
+        date: event.startDate,
+
+        registeredParticipants,
 
             availableSpots:
                 max > 0
@@ -199,6 +215,8 @@ exports.getEventById = asyncHandler(async (req, res) => {
 
         ...event.toJSON(),
 
+        date: event.startDate,
+
         registeredParticipants,
 
         availableSpots:
@@ -226,8 +244,10 @@ exports.getEventById = asyncHandler(async (req, res) => {
 // Criar evento
 // =============================
 
+
 exports.createEvent = asyncHandler(async (req, res) => {
 
+    normalizeEventPayload(req.body);
     const event = await Event.create(req.body);
 
     await EventHistory.create({
@@ -254,9 +274,9 @@ exports.createEvent = asyncHandler(async (req, res) => {
 // =============================
 // Atualizar evento
 // =============================
-
 exports.updateEvent = asyncHandler(async (req, res) => {
 
+    normalizeEventPayload(req.body);
     const event = await Event.findByPk(req.params.id);
 
     if (!event) {
