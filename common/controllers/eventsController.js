@@ -88,9 +88,10 @@ exports.getAllEvents = asyncHandler(async (req, res) => {
             eventId: eventIds
         },
         attributes: [
-            'eventId',
-            'userId',
-            'approvalStatus'
+          'eventId',
+          'userId',
+          'approvalStatus',
+          'isCheckedIn'
         ]
     });
 
@@ -104,7 +105,8 @@ exports.getAllEvents = asyncHandler(async (req, res) => {
 
         map[p.eventId].push({
             userId: p.userId,
-            approvalStatus: p.approvalStatus
+            approvalStatus: p.approvalStatus,
+            isCheckedIn: p.isCheckedIn
         });
     });
 
@@ -151,7 +153,12 @@ exports.getAllEvents = asyncHandler(async (req, res) => {
             userRegistrationApprovalStatus:
                 userParticipant
                     ? userParticipant.approvalStatus
-                    : null
+                    : null,
+            
+            isUserCheckedIn:
+                userParticipant
+                    ? userParticipant.isCheckedIn
+                    : false,
         };
     });
 
@@ -192,7 +199,8 @@ exports.getEventById = asyncHandler(async (req, res) => {
         },
         attributes: [
             'userId',
-            'approvalStatus'
+            'approvalStatus',
+            'isCheckedIn'
         ]
     });
 
@@ -235,7 +243,12 @@ exports.getEventById = asyncHandler(async (req, res) => {
         userRegistrationApprovalStatus:
             userParticipant
                 ? userParticipant.approvalStatus
-                : null
+                : null,
+        
+        isUserCheckedIn:
+            userParticipant
+                ? userParticipant.isCheckedIn
+                : false
     });
 });
 
