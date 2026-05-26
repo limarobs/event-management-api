@@ -132,9 +132,12 @@ async function startServer() {
 
     logInfo("Conexão com o banco estabelecida.");
 
-    await sequelize.sync({ alter: true });
-
-    logInfo("Modelos sincronizados.");
+    if (process.env.FORCE_SYNC === 'true') {
+      await sequelize.sync({ alter: true });
+      logInfo("Modelos sincronizados (sync alter).");
+    } else {
+      logInfo("Skipping sequelize.sync; use migrations to manage DB schema.");
+    }
 
     const User = require("./common/models/User");
 
