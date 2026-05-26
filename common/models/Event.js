@@ -13,9 +13,14 @@ const Event = sequelize.define("Event", {
       allowNull: true
    },
 
-   date: {
+   startDate: {
       type: DataTypes.DATEONLY,
-      allowNull: false
+      allowNull: true
+   },
+
+   endDate: {
+      type: DataTypes.DATEONLY,
+      allowNull: true
    },
 
    startTime: {
@@ -61,7 +66,14 @@ const Event = sequelize.define("Event", {
 
       isEventDateValid() {
 
-         const eventDateTime = new Date(`${this.date}T${this.startTime}`);
+         if (!this.startDate || !this.startTime) {
+            return;
+         }
+
+         const eventDateTime = new Date(
+            `${this.startDate}T${this.startTime}`
+         );
+
          const now = new Date();
 
          if (eventDateTime < now) {
@@ -72,11 +84,16 @@ const Event = sequelize.define("Event", {
       isEndTimeAfterStartTime() {
 
          if (
+            this.startDate &&
+            this.endDate &&
+            this.startDate === this.endDate &&
             this.startTime &&
             this.endTime &&
             this.endTime <= this.startTime
          ) {
-            throw new Error("A hora de fim deve ser posterior à hora de início");
+            throw new Error(
+               "A hora de fim deve ser posterior à hora de início"
+            );
          }
       }
    }
