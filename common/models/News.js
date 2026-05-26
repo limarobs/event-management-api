@@ -1,25 +1,36 @@
-// Importa os recursos do Sequelize
 const { DataTypes } = require('sequelize');
-
-// Importa a conexão com o banco
 const sequelize = require('../database');
 
-// Cria o model de notícias
 const News = sequelize.define('News', {
-
-  // Título da notícia
   title: {
     type: DataTypes.STRING,
-    allowNull: false
+    allowNull: false,
+    validate: {
+      notEmpty: { msg: 'Título é obrigatório' }
+    }
   },
 
-  // Conteúdo da notícia
   content: {
     type: DataTypes.TEXT,
+    allowNull: false,
+    validate: {
+      notEmpty: { msg: 'Conteúdo é obrigatório' }
+    }
+  },
+
+  author: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    validate: {
+      notEmpty: { msg: 'Autor não pode ser vazio' }
+    }
+  },
+
+  eventId: {
+    type: DataTypes.INTEGER,
     allowNull: false
   }
 
 });
 
-// Exporta o model
 module.exports = News;
