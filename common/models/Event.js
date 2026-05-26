@@ -75,25 +75,23 @@ const Event = sequelize.define("Event", {
             return; // Encerra a validação caso algum campo esteja vazio
          }
 
-         const start = new Date(
-            `${this.startDate}T${this.startTime}`// Junta data e hora de início em um objeto Date
-         );
+         const localNowStr = new Date().toLocaleString("sv-SE", { timeZone: "America/Sao_Paulo" }).replace(" ", "T");
+         const now = new Date(localNowStr);
+         const start = new Date(`${this.startDate}T${this.startTime}`);
+         const end = new Date(`${this.endDate}T${this.endTime}`);
+         const dataAlterada = this.changed('startDate') || this.changed('startTime');
 
-         const end = new Date(
-            `${this.endDate}T${this.endTime}`// Junta data e hora de término em um objeto Date
-         );
-
-         const now = new Date();// Obtém a data e hora atuais do sistema
-
-         if (start < now) {// Verifica se o evento está sendo criado para uma data passada
-            throw new Error(
-               "O evento não pode iniciar no passado"// Mensagem de erro exibida ao usuário
-            );
+         if (this.isNewRecord || dataAlterada) {
+            if (start < now) {
+               throw new Error(
+                  "O evento não pode iniciar no passado"
+               );
+            }
          }
 
-         if (end <= start) {// Verifica se o horário final é menor ou igual ao inicial
+         if (end <= start) {
             throw new Error(
-               "A data/hora final deve ser posterior à inicial" // Mensagem de erro caso a data final seja inválida
+               "A data/hora final deve ser posterior à inicial"
             );
          }
       }
