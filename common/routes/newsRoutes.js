@@ -3,13 +3,14 @@ const express = require('express');
 const router = express.Router();
 
 const newsController = require('../controllers/newsController');
+const authMiddleware = require('../middleware/authMiddleware');
 
 router.get('/', newsController.getNews);
 
-router.post('/', newsController.createNews);
+router.post('/', authMiddleware, newsController.createNews);
 
-router.put('/:id', newsController.updateNews);
+router.put('/:id', authMiddleware, newsController.updateNews);
 
-router.delete('/:id', newsController.deleteNews);
+router.delete('/:id', authMiddleware, newsController.deleteNews);
 
 module.exports = router;
