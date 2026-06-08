@@ -261,7 +261,10 @@ exports.getEventById = asyncHandler(async (req, res) => {
 exports.createEvent = asyncHandler(async (req, res) => {
 
     normalizeEventPayload(req.body);
-    const event = await Event.create(req.body);
+    const event = await Event.create({
+        ...req.body,
+        imagePath: req.file ? req.file.path : null
+    });
 
     await EventHistory.create({
         eventId: event.id,
