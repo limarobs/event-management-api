@@ -9,6 +9,30 @@ const asyncHandler = require('../helpers/asyncHandler');
 
 const { Op } = require('sequelize');
 
+function getEventImageUrl(req, event) {
+
+    if (!event.imagePath) {
+        return null;
+    }
+
+    const normalizedPath = event.imagePath.replace(/\\/g, '/');
+    const uploadsIndex = normalizedPath.lastIndexOf('uploads/');
+
+    if (uploadsIndex === -1) {
+        return null;
+    }
+
+    return `${req.protocol}://${req.get('host')}/${normalizedPath.slice(uploadsIndex)}`;
+}
+
+function serializeEvent(req, event) {
+
+    return {
+        ...event.toJSON(),
+        imageUrl: getEventImageUrl(req, event)
+    };
+}
+
 function normalizeEventPayload(body) {
     if (!body) {
         return;
@@ -131,7 +155,7 @@ exports.getAllEvents = asyncHandler(async (req, res) => {
 
         return {
 
-            ...event.toJSON(),
+            ...serializeEvent(req, event),
 
             imageUrl: event.imagePath ? `http://localhost:${process.env.PORT || 4000}/${event.imagePath.replace(/\\/g, '/')}` : null,
 
@@ -223,7 +247,7 @@ exports.getEventById = asyncHandler(async (req, res) => {
 
     res.json({
 
-        ...event.toJSON(),
+        ...serializeEvent(req, event),
 
         imageUrl: event.imagePath ? `http://localhost:${process.env.PORT || 4000}/${event.imagePath.replace(/\\/g, '/')}` : null,
 
@@ -280,7 +304,7 @@ exports.createEvent = asyncHandler(async (req, res) => {
     res.status(201).json({
         message: "Evento criado com sucesso",
         data: {
-            ...event.toJSON(),
+            ...serializeEvent(req, event),
             registeredParticipants: 0,
             availableSpots: event.maxParticipants ?? null,
             isSoldOut: false,
@@ -372,7 +396,7 @@ exports.updateEvent = asyncHandler(async (req, res) => {
     res.json({
         message: "Evento updated com sucesso",
         data: {
-            ...event.toJSON(),
+            ...serializeEvent(req, event),
             registeredParticipants,
             availableSpots:
                 max > 0

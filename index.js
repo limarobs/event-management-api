@@ -1,6 +1,6 @@
 const express = require("express");
 const cors = require("cors");
-const path = require('path');
+const path = require("path");
 
 require("dotenv").config();
 
@@ -72,6 +72,8 @@ app.use(cors({
 // ======================
 
 app.use(express.json());
+
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // ======================
 // ROTAS API
