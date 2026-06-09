@@ -2,7 +2,7 @@ const Event = require('../models/Event');
 const EventHistory = require('../models/EventHistory');
 const Participant = require('../models/participant');
 const User = require('../models/User');
-
+const fs = require('fs');
 const { updateEventStatus } = require('../helpers/eventHelper');
 
 const asyncHandler = require('../helpers/asyncHandler');
@@ -88,10 +88,10 @@ exports.getAllEvents = asyncHandler(async (req, res) => {
             eventId: eventIds
         },
         attributes: [
-          'eventId',
-          'userId',
-          'approvalStatus',
-          'isCheckedIn'
+            'eventId',
+            'userId',
+            'approvalStatus',
+            'isCheckedIn'
         ]
     });
 
@@ -114,7 +114,7 @@ exports.getAllEvents = asyncHandler(async (req, res) => {
 
         const list = map[event.id] || [];
 
-        const registeredParticipants = list.filter(p => 
+        const registeredParticipants = list.filter(p =>
             ['pending', 'approved'].includes(p.approvalStatus)
         ).length;
 
@@ -131,11 +131,11 @@ exports.getAllEvents = asyncHandler(async (req, res) => {
 
         return {
 
-        ...event.toJSON(),
+            ...event.toJSON(),
 
-        date: event.startDate,
+            date: event.startDate,
 
-        registeredParticipants,
+            registeredParticipants,
 
             availableSpots:
                 max > 0
@@ -154,12 +154,12 @@ exports.getAllEvents = asyncHandler(async (req, res) => {
                 userParticipant
                     ? userParticipant.approvalStatus
                     : null,
-            
+
             isCheckedIn:
                 userParticipant
                     ? userParticipant.isCheckedIn
                     : false,
-                    };
+        };
     });
 
     const totalPages = Math.ceil(totalItems / limit);
@@ -204,7 +204,7 @@ exports.getEventById = asyncHandler(async (req, res) => {
         ]
     });
 
-    const registeredParticipants = participants.filter(p => 
+    const registeredParticipants = participants.filter(p =>
         ['pending', 'approved'].includes(p.approvalStatus)
     ).length;
 
@@ -244,7 +244,7 @@ exports.getEventById = asyncHandler(async (req, res) => {
             userParticipant
                 ? userParticipant.approvalStatus
                 : null,
-        
+
         isCheckedIn:
             userParticipant
                 ? userParticipant.isCheckedIn
@@ -261,7 +261,10 @@ exports.getEventById = asyncHandler(async (req, res) => {
 exports.createEvent = asyncHandler(async (req, res) => {
 
     normalizeEventPayload(req.body);
-    const event = await Event.create(req.body);
+    const event = await Event.create({
+        ...req.body,
+        imagePath: req.file ? req.file.path : null
+    });
 
     await EventHistory.create({
         eventId: event.id,
@@ -301,13 +304,29 @@ exports.updateEvent = asyncHandler(async (req, res) => {
 
     const before = event.toJSON();
 
+    const updateData = {
+        ...req.body
+    };
+
+    if (req.file) {
+
+        if (
+            event.imagePath &&
+            fs.existsSync(event.imagePath)
+        ) {
+            fs.unlinkSync(event.imagePath);
+        }
+
+        updateData.imagePath = req.file.path;
+    }
+
     await event.update(req.body);
 
     const after = event.toJSON();
 
     const changedFields = {};
 
-    for (const key of Object.keys(req.body)) {
+    for (const key of Object.keys(updateData)) {
 
         if (IGNORED_FIELDS.includes(key)) {
             continue;
@@ -361,6 +380,9 @@ exports.updateEvent = asyncHandler(async (req, res) => {
                     : false
         }
     });
+
+    console.log(req.body);
+    console.log(req.file);
 });
 
 

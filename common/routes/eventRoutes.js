@@ -8,6 +8,7 @@ const partCtrl = require('../controllers/participantController');
 const authMid = require('../middleware/authMiddleware');
 const adminMid = require('../middleware/adminMiddleware');
 const guestMid = require('../middleware/guestMiddleware');
+const { uploadEventImage } = require('../helpers/eventImageUploadHelper');
 
 
 // =============================
@@ -42,6 +43,7 @@ router.post(
     '/',
     authMid,
     adminMid,
+    uploadEventImage.single('image'),
     eventCtrl.createEvent
 );
 
@@ -49,6 +51,7 @@ router.put(
     '/:id',
     authMid,
     adminMid,
+    uploadEventImage.single('image'),
     eventCtrl.updateEvent
 );
 

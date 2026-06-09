@@ -4,7 +4,14 @@ const createNews = async (req, res) => {
 
   try {
 
-    const news = await News.create(req.body);
+    const author = req.user.name;
+    const eventId = req.query.eventId;
+
+    const news = await News.create({
+      ...req.body,
+      eventId: req.query.eventId,
+      author: req.user.name
+  });
 
     res.status(201).json(news);
 

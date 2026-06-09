@@ -3,6 +3,11 @@ const sequelize = require("../database");
 
 const Event = sequelize.define("Event", {
 
+   imagePath: {
+   type: DataTypes.STRING,
+   allowNull: true
+   },
+
    title: {
       type: DataTypes.STRING,
       allowNull: false
