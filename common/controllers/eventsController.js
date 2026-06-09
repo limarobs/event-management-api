@@ -133,6 +133,8 @@ exports.getAllEvents = asyncHandler(async (req, res) => {
 
             ...event.toJSON(),
 
+            imageUrl: event.imagePath ? `http://localhost:${process.env.PORT || 4000}/${event.imagePath.replace(/\\/g, '/')}` : null,
+
             date: event.startDate,
 
             registeredParticipants,
@@ -222,6 +224,8 @@ exports.getEventById = asyncHandler(async (req, res) => {
     res.json({
 
         ...event.toJSON(),
+
+        imageUrl: event.imagePath ? `http://localhost:${process.env.PORT || 4000}/${event.imagePath.replace(/\\/g, '/')}` : null,
 
         date: event.startDate,
 
@@ -320,7 +324,7 @@ exports.updateEvent = asyncHandler(async (req, res) => {
         updateData.imagePath = req.file.path;
     }
 
-    await event.update(req.body);
+    await event.update(updateData);
 
     const after = event.toJSON();
 

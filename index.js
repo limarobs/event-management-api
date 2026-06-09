@@ -1,5 +1,6 @@
 const express = require("express");
 const cors = require("cors");
+const path = require('path');
 
 require("dotenv").config();
 
@@ -89,6 +90,8 @@ app.use("/api/news", newsRoutes);
 app.use("/api/search", searchRoutes);
 
 app.use("/api/events/:id/materials", materialsRoutes);
+
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // ======================
 // TESTES
