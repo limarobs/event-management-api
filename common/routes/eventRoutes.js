@@ -51,6 +51,7 @@ router.put(
     '/:id',
     authMid,
     adminMid,
+    uploadEventImage.single('image'),
     eventCtrl.updateEvent
 );
 
