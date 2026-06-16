@@ -60,12 +60,14 @@ process.on("uncaughtException", (err) => {
 // ======================
 
 app.use(cors({
-  origin: [
-    "http://localhost:4200",
-    "http://127.0.0.1:4200"
-  ],
+  origin: true,
   credentials: true
 }));
+
+app.use((req, res, next) => {
+  console.log(`[REQUEST] ${req.method} ${req.originalUrl} origin=${req.headers.origin || 'unknown'}`);
+  next();
+});
 
 // ======================
 // JSON

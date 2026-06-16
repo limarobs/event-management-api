@@ -82,6 +82,7 @@ const Event = sequelize.define("Event", {
 
          const localNowStr = new Date().toLocaleString("sv-SE", { timeZone: "America/Sao_Paulo" }).replace(" ", "T");
          const now = new Date(localNowStr);
+         now.setSeconds(0, 0);
          const start = new Date(`${this.startDate}T${this.startTime}`);
          const end = new Date(`${this.endDate}T${this.endTime}`);
          const dataAlterada = this.changed('startDate') || this.changed('startTime');
