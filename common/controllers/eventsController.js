@@ -22,7 +22,13 @@ function getEventImageUrl(req, event) {
         return null;
     }
 
-    return `${req.protocol}://${req.get('host')}/${normalizedPath.slice(uploadsIndex)}`;
+    let host = req.get('host');
+    // In Docker, req.get('host') might be 'api:4000' but needs to be 'localhost:4000' for browser access
+    if (host.startsWith('api:')) {
+        host = 'localhost:' + host.split(':')[1];
+    }
+
+    return `${req.protocol}://${host}/${normalizedPath.slice(uploadsIndex)}`;
 }
 
 function serializeEvent(req, event) {
@@ -157,7 +163,7 @@ exports.getAllEvents = asyncHandler(async (req, res) => {
 
             ...serializeEvent(req, event),
 
-            imageUrl: event.imagePath ? `http://localhost:${process.env.PORT || 4000}/${event.imagePath.replace(/\\/g, '/')}` : null,
+            imageUrl: getEventImageUrl(req, event),
 
             date: event.startDate,
 
@@ -249,7 +255,7 @@ exports.getEventById = asyncHandler(async (req, res) => {
 
         ...serializeEvent(req, event),
 
-        imageUrl: event.imagePath ? `http://localhost:${process.env.PORT || 4000}/${event.imagePath.replace(/\\/g, '/')}` : null,
+        imageUrl: getEventImageUrl(req, event),
 
         date: event.startDate,
 
