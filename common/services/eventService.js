@@ -86,8 +86,7 @@ async function getAllEvents(req) {
     const offset = (page - 1) * limit;
 
     const { count: totalItems, rows: events } = await Event.findAndCountAll({
-        limit,
-        offset,
+        limit, offset,
         order: [['startDate', 'ASC'], ['startTime', 'ASC']]
     });
 
@@ -149,6 +148,84 @@ async function createEvent(req) {
     };
 }
 
+async function updateEvent(req, id) {
+    normalizeEventPayload(req.body);
+
+    const event = await Event.findByPk(id);
+
+    if (!event) {
+        const err = new Error("Evento não encontrado");
+        err.status = 404;
+        throw err;
+    }
+
+    const before = event.toJSON();
+    const updateData = { ...req.body };
+
+    if (req.file) {
+        if (event.imagePath && fs.existsSync(event.imagePath)) {
+            fs.unlinkSync(event.imagePath);
+        }
+        updateData.imagePath = req.file.path;
+    }
+
+    await event.update(updateData);
+
+    const after = event.toJSON();
+    const changedFields = {};
+
+    for (const key of Object.keys(updateData)) {
+        if (IGNORED_FIELDS.includes(key)) continue;
+
+        if (String(before[key]) !== String(after[key])) {
+            changedFields[key] = { before: before[key], after: after[key] };
+        }
+    }
+
+    await EventHistory.create({
+        eventId: event.id,
+        userId: req.user.id,
+        action: 'updated',
+        changedFields: Object.keys(changedFields).length ? changedFields : null
+    });
+
+    const participants = await Participant.findAll({
+        where: {
+            eventId: event.id,
+            approvalStatus: { [Op.in]: ['pending', 'approved'] }
+        }
+    });
+
+    const registeredParticipants = participants.length;
+    const max = event.maxParticipants ?? 0;
+
+    return {
+        ...serializeEvent(req, event),
+        registeredParticipants,
+        availableSpots: max > 0 ? Math.max(max - registeredParticipants, 0) : null,
+        isSoldOut: max > 0 ? registeredParticipants >= max : false
+    };
+}
+
+async function deleteEvent(req, id) {
+    const event = await Event.findByPk(id);
+
+    if (!event) {
+        const err = new Error("Evento não encontrado");
+        err.status = 404;
+        throw err;
+    }
+
+    await EventHistory.create({
+        eventId: event.id,
+        userId: req.user.id,
+        action: 'deleted',
+        changedFields: null
+    });
+
+    await event.destroy();
+}
+
 async function getEventHistory(id) {
     const event = await Event.findByPk(id);
 
@@ -166,12 +243,11 @@ async function getEventHistory(id) {
 }
 
 module.exports = {
-    serializeEvent,
-    normalizeEventPayload,
-    IGNORED_FIELDS,
     getDeletedEvents,
     getAllEvents,
     getEventById,
     createEvent,
+    updateEvent,
+    deleteEvent,
     getEventHistory
 };
