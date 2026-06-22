@@ -1,7 +1,6 @@
 const Event = require('../models/Event');
 const EventHistory = require('../models/EventHistory');
 const Participant = require('../models/participant');
-const User = require('../models/User');
 const fs = require('fs');
 const asyncHandler = require('../helpers/asyncHandler');
 const { Op } = require('sequelize');
@@ -9,62 +8,27 @@ const { Op } = require('sequelize');
 const {
     serializeEvent,
     normalizeEventPayload,
-    buildEventSummary,
     IGNORED_FIELDS,
     getDeletedEvents,
-    getAllEvents
+    getAllEvents,
+    getEventById,
+    getEventHistory
 } = require('../services/eventService');
-
-
-// =============================
-// Eventos deletados
-// =============================
 
 exports.getDeletedEvents = asyncHandler(async (req, res) => {
     const events = await getDeletedEvents();
-
     res.json({ success: true, data: events });
 });
-
-
-// =============================
-// Listar eventos
-// =============================
 
 exports.getAllEvents = asyncHandler(async (req, res) => {
     const result = await getAllEvents(req);
     res.json(result);
 });
 
-
-// =============================
-// Buscar evento por ID
-// =============================
-
 exports.getEventById = asyncHandler(async (req, res) => {
-
-    const userId = req.user?.id;
-
-    const event = await Event.findByPk(req.params.id);
-
-    if (!event) {
-        const err = new Error("Evento não encontrado");
-        err.status = 404;
-        throw err;
-    }
-
-    const participants = await Participant.findAll({
-        where: { eventId: event.id },
-        attributes: ['userId', 'approvalStatus', 'isCheckedIn']
-    });
-
-    res.json(buildEventSummary(req, event, participants, userId));
+    const event = await getEventById(req, req.params.id);
+    res.json(event);
 });
-
-
-// =============================
-// Criar evento
-// =============================
 
 exports.createEvent = asyncHandler(async (req, res) => {
 
@@ -94,11 +58,6 @@ exports.createEvent = asyncHandler(async (req, res) => {
         }
     });
 });
-
-
-// =============================
-// Atualizar evento
-// =============================
 
 exports.updateEvent = asyncHandler(async (req, res) => {
 
@@ -163,11 +122,6 @@ exports.updateEvent = asyncHandler(async (req, res) => {
     });
 });
 
-
-// =============================
-// Deletar evento
-// =============================
-
 exports.deleteEvent = asyncHandler(async (req, res) => {
 
     const event = await Event.findByPk(req.params.id);
@@ -190,26 +144,7 @@ exports.deleteEvent = asyncHandler(async (req, res) => {
     res.json({ message: "Evento excluído com sucesso" });
 });
 
-
-// =============================
-// Histórico do evento
-// =============================
-
 exports.getEventHistory = asyncHandler(async (req, res) => {
-
-    const event = await Event.findByPk(req.params.id);
-
-    if (!event) {
-        const err = new Error("Evento não encontrado");
-        err.status = 404;
-        throw err;
-    }
-
-    const history = await EventHistory.findAll({
-        where: { eventId: req.params.id },
-        include: [{ model: User, attributes: ['name', 'email'] }],
-        order: [['createdAt', 'DESC']]
-    });
-
+    const history = await getEventHistory(req.params.id);
     res.json(history);
 });

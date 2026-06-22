@@ -7,30 +7,21 @@ const fs = require('fs');
 const { Op } = require('sequelize');
 
 function getEventImageUrl(req, event) {
-    if (!event.imagePath) {
-        return null;
-    }
+    if (!event.imagePath) return null;
 
     const normalizedPath = event.imagePath.replace(/\\/g, '/');
     const uploadsIndex = normalizedPath.lastIndexOf('uploads/');
 
-    if (uploadsIndex === -1) {
-        return null;
-    }
+    if (uploadsIndex === -1) return null;
 
     let host = req.get('host');
-    if (host.startsWith('api:')) {
-        host = 'localhost:' + host.split(':')[1];
-    }
+    if (host.startsWith('api:')) host = 'localhost:' + host.split(':')[1];
 
     return `${req.protocol}://${host}/${normalizedPath.slice(uploadsIndex)}`;
 }
 
 function serializeEvent(req, event) {
-    return {
-        ...event.toJSON(),
-        imageUrl: getEventImageUrl(req, event)
-    };
+    return { ...event.toJSON(), imageUrl: getEventImageUrl(req, event) };
 }
 
 function normalizeEventPayload(body) {
@@ -62,12 +53,8 @@ function buildEventSummary(req, event, participants, userId) {
     ).length;
 
     const max = event.maxParticipants ?? 0;
-
     const uid = (userId !== undefined && userId !== null) ? Number(userId) : null;
-
-    const userParticipant = uid !== null
-        ? participants.find(p => Number(p.userId) === uid)
-        : null;
+    const userParticipant = uid !== null ? participants.find(p => Number(p.userId) === uid) : null;
 
     return {
         ...serializeEvent(req, event),
@@ -84,13 +71,11 @@ function buildEventSummary(req, event, participants, userId) {
 const IGNORED_FIELDS = ['updatedAt', 'createdAt', 'id'];
 
 async function getDeletedEvents() {
-    const events = await Event.findAll({
+    return Event.findAll({
         where: { deletedAt: { [Op.ne]: null } },
         paranoid: false,
         order: [['deletedAt', 'DESC']]
     });
-
-    return events;
 }
 
 async function getAllEvents(req) {
@@ -106,32 +91,62 @@ async function getAllEvents(req) {
         order: [['startDate', 'ASC'], ['startTime', 'ASC']]
     });
 
-    const eventIds = events.map(e => e.id);
-
     const participants = await Participant.findAll({
-        where: { eventId: eventIds },
+        where: { eventId: events.map(e => e.id) },
         attributes: ['eventId', 'userId', 'approvalStatus', 'isCheckedIn']
     });
 
     const map = buildParticipantMap(participants);
-
-    const data = events.map(event => {
-        const list = map[event.id] || [];
-        return buildEventSummary(req, event, list, userId);
-    });
-
     const totalPages = Math.ceil(totalItems / limit);
 
-    return { page, limit, totalItems, totalPages, hasPreviousPage: page > 1, hasNextPage: page < totalPages, data };
+    return {
+        page, limit, totalItems, totalPages,
+        hasPreviousPage: page > 1,
+        hasNextPage: page < totalPages,
+        data: events.map(event => buildEventSummary(req, event, map[event.id] || [], userId))
+    };
+}
+
+async function getEventById(req, id) {
+    const event = await Event.findByPk(id);
+
+    if (!event) {
+        const err = new Error("Evento não encontrado");
+        err.status = 404;
+        throw err;
+    }
+
+    const participants = await Participant.findAll({
+        where: { eventId: event.id },
+        attributes: ['userId', 'approvalStatus', 'isCheckedIn']
+    });
+
+    return buildEventSummary(req, event, participants, req.user?.id);
+}
+
+
+async function getEventHistory(id) {
+    const event = await Event.findByPk(id);
+
+    if (!event) {
+        const err = new Error("Evento não encontrado");
+        err.status = 404;
+        throw err;
+    }
+
+    return EventHistory.findAll({
+        where: { eventId: id },
+        include: [{ model: User, attributes: ['name', 'email'] }],
+        order: [['createdAt', 'DESC']]
+    });
 }
 
 module.exports = {
-    getEventImageUrl,
     serializeEvent,
     normalizeEventPayload,
-    buildParticipantMap,
-    buildEventSummary,
     IGNORED_FIELDS,
     getDeletedEvents,
-    getAllEvents
+    getAllEvents,
+    getEventById,
+    getEventHistory
 };
