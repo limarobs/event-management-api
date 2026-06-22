@@ -124,6 +124,30 @@ async function getEventById(req, id) {
     return buildEventSummary(req, event, participants, req.user?.id);
 }
 
+async function createEvent(req) {
+    normalizeEventPayload(req.body);
+
+    const event = await Event.create({
+        ...req.body,
+        imagePath: req.file ? req.file.path : null
+    });
+
+    await EventHistory.create({
+        eventId: event.id,
+        userId: req.user.id,
+        action: 'created',
+        changedFields: null
+    });
+
+    return {
+        ...serializeEvent(req, event),
+        registeredParticipants: 0,
+        availableSpots: event.maxParticipants ?? null,
+        isSoldOut: false,
+        isUserRegistered: false,
+        userRegistrationApprovalStatus: null
+    };
+}
 
 async function getEventHistory(id) {
     const event = await Event.findByPk(id);
@@ -148,5 +172,6 @@ module.exports = {
     getDeletedEvents,
     getAllEvents,
     getEventById,
+    createEvent,
     getEventHistory
 };
