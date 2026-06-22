@@ -36,7 +36,7 @@ const Participant = sequelize.define('Participant', {
     },
 
     subscriptionToken: {
-        type: DataTypes.STRING(64),
+        type: DataTypes.STRING(96),
         allowNull: true,
         unique: true
     },
