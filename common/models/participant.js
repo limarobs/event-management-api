@@ -27,12 +27,12 @@ const Participant = sequelize.define('Participant', {
         type: DataTypes.ENUM('pending', 'approved', 'rejected'),
         allowNull: false,
         defaultValue: 'pending',
-        
+        field: 'status',
     },
 
     approvalReason: {
         type: DataTypes.TEXT,
-        allowNull: true
+        allowNull: true,
     },
 
     subscriptionToken: {
