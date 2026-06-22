@@ -7,12 +7,12 @@ const asyncHandler = require('../helpers/asyncHandler');
 const { Op } = require('sequelize');
 
 const {
-    getEventImageUrl,
     serializeEvent,
     normalizeEventPayload,
-    buildParticipantMap,
     buildEventSummary,
-    IGNORED_FIELDS
+    IGNORED_FIELDS,
+    getDeletedEvents,
+    getAllEvents
 } = require('../services/eventService');
 
 
@@ -21,21 +21,9 @@ const {
 // =============================
 
 exports.getDeletedEvents = asyncHandler(async (req, res) => {
+    const events = await getDeletedEvents();
 
-    const events = await Event.findAll({
-        where: {
-            deletedAt: {
-                [Op.ne]: null
-            }
-        },
-        paranoid: false,
-        order: [['deletedAt', 'DESC']]
-    });
-
-    res.json({
-        success: true,
-        data: events
-    });
+    res.json({ success: true, data: events });
 });
 
 
@@ -44,44 +32,8 @@ exports.getDeletedEvents = asyncHandler(async (req, res) => {
 // =============================
 
 exports.getAllEvents = asyncHandler(async (req, res) => {
-
-    const userId = req.user?.id;
-
-    const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
-    const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 10, 1), 50);
-    const offset = (page - 1) * limit;
-
-    const { count: totalItems, rows: events } = await Event.findAndCountAll({
-        limit,
-        offset,
-        order: [['startDate', 'ASC'], ['startTime', 'ASC']]
-    });
-
-    const eventIds = events.map(e => e.id);
-
-    const participants = await Participant.findAll({
-        where: { eventId: eventIds },
-        attributes: ['eventId', 'userId', 'approvalStatus', 'isCheckedIn']
-    });
-
-    const map = buildParticipantMap(participants);
-
-    const data = events.map(event => {
-        const list = map[event.id] || [];
-        return buildEventSummary(req, event, list, userId);
-    });
-
-    const totalPages = Math.ceil(totalItems / limit);
-
-    res.json({
-        page,
-        limit,
-        totalItems,
-        totalPages,
-        hasPreviousPage: page > 1,
-        hasNextPage: page < totalPages,
-        data
-    });
+    const result = await getAllEvents(req);
+    res.json(result);
 });
 
 

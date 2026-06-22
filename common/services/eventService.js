@@ -34,26 +34,17 @@ function serializeEvent(req, event) {
 }
 
 function normalizeEventPayload(body) {
-    if (!body) {
-        return;
-    }
+    if (!body) return;
 
-    if (!body.startDate && body.date) {
-        body.startDate = body.date;
-    }
-
-    if (!body.endDate && body.date) {
-        body.endDate = body.date;
-    }
+    if (!body.startDate && body.date) body.startDate = body.date;
+    if (!body.endDate && body.date) body.endDate = body.date;
 }
 
 function buildParticipantMap(participants) {
     const map = {};
 
     participants.forEach(p => {
-        if (!map[p.eventId]) {
-            map[p.eventId] = [];
-        }
+        if (!map[p.eventId]) map[p.eventId] = [];
 
         map[p.eventId].push({
             userId: p.userId,
@@ -72,14 +63,11 @@ function buildEventSummary(req, event, participants, userId) {
 
     const max = event.maxParticipants ?? 0;
 
-    const uid = (userId !== undefined && userId !== null)
-        ? Number(userId)
-        : null;
+    const uid = (userId !== undefined && userId !== null) ? Number(userId) : null;
 
-    const userParticipant =
-        uid !== null
-            ? participants.find(p => Number(p.userId) === uid)
-            : null;
+    const userParticipant = uid !== null
+        ? participants.find(p => Number(p.userId) === uid)
+        : null;
 
     return {
         ...serializeEvent(req, event),
@@ -95,11 +83,55 @@ function buildEventSummary(req, event, participants, userId) {
 
 const IGNORED_FIELDS = ['updatedAt', 'createdAt', 'id'];
 
+async function getDeletedEvents() {
+    const events = await Event.findAll({
+        where: { deletedAt: { [Op.ne]: null } },
+        paranoid: false,
+        order: [['deletedAt', 'DESC']]
+    });
+
+    return events;
+}
+
+async function getAllEvents(req) {
+    const userId = req.user?.id;
+
+    const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
+    const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 10, 1), 50);
+    const offset = (page - 1) * limit;
+
+    const { count: totalItems, rows: events } = await Event.findAndCountAll({
+        limit,
+        offset,
+        order: [['startDate', 'ASC'], ['startTime', 'ASC']]
+    });
+
+    const eventIds = events.map(e => e.id);
+
+    const participants = await Participant.findAll({
+        where: { eventId: eventIds },
+        attributes: ['eventId', 'userId', 'approvalStatus', 'isCheckedIn']
+    });
+
+    const map = buildParticipantMap(participants);
+
+    const data = events.map(event => {
+        const list = map[event.id] || [];
+        return buildEventSummary(req, event, list, userId);
+    });
+
+    const totalPages = Math.ceil(totalItems / limit);
+
+    return { page, limit, totalItems, totalPages, hasPreviousPage: page > 1, hasNextPage: page < totalPages, data };
+}
+
 module.exports = {
     getEventImageUrl,
     serializeEvent,
     normalizeEventPayload,
     buildParticipantMap,
     buildEventSummary,
-    IGNORED_FIELDS
+    IGNORED_FIELDS,
+    getDeletedEvents,
+    getAllEvents
 };
