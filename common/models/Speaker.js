@@ -12,7 +12,21 @@ const Speaker = sequelize.define('Speaker', {
   },
 
   topics: {
-    type: DataTypes.TEXT
+    type: DataTypes.TEXT,
+    get() {
+      const value = this.getDataValue('topics');
+      try {
+        return value ? JSON.parse(value) : [];
+      } catch {
+        return value;
+      }
+    },
+    set(value) {
+      this.setDataValue(
+        'topics',
+        Array.isArray(value) ? JSON.stringify(value) : value
+      );
+    }
   },
 
   schedule: {
